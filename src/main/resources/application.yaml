@@ -9,20 +9,27 @@ spring:
   # データソース & HikariCP設定
   # ===================================================
   datasource:
-    url: jdbc:postgresql://localhost:5432/attendance_db
-    username: postgres
-    password: ${DB_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
-    
-    hikari:
-      # プール内の最大コネクション数
-      maximum-pool-size: 10
-      # 常に保持しておく最低限の待機コネクション数
-      minimum-idle: 2
-      # コネクション取得のタイムアウト時間（ミリ秒：デフォルト30秒）
-      connection-timeout: 30000
-      # コネクションの最大生存時間（ミリ秒：デフォルト30分）※DB側の切断設定より短くするのが鉄則！
-      max-lifetime: 1800000
+    # 単体テストは一瞬で終わらせるため、H2の「PostgreSQL互換モード」を使う
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+    # TODO DB構築までコメントアウト
+  #  datasource:
+  #    url: jdbc:postgresql://localhost:5432/attendance_db
+  #    username: postgres
+  #    password: ${DB_PASSWORD:password}
+  #    driver-class-name: org.postgresql.Driver
+  #
+  #    hikari:
+  #      # プール内の最大コネクション数
+  #      maximum-pool-size: 10
+  #      # 常に保持しておく最低限の待機コネクション数
+  #      minimum-idle: 2
+  #      # コネクション取得のタイムアウト時間（ミリ秒：デフォルト30秒）
+  #      connection-timeout: 30000
+  #      # コネクションの最大生存時間（ミリ秒：デフォルト30分）※DB側の切断設定より短くするのが鉄則！
+  #      max-lifetime: 1800000
 
   # ===================================================
   # インフラツール設定 (Flyway / jOOQ)
