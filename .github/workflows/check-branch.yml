@@ -1,0 +1,21 @@
+name: Check Base Branch for Main
+
+on:
+  pull_request:
+    branches: [ "main" ] # mainに向かうPRが対象
+
+jobs:
+  check-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify that the PR is coming from a release branch
+        run: |
+          # マージ元のブランチ名を取得
+          SOURCE_BRANCH=${{ github.head_ref }}
+          echo "Source branch is $SOURCE_BRANCH"
+          
+          # release で始まるブランチ名以外ならエラーで落とす
+          if [[ ! "$SOURCE_BRANCH" =~ ^release ]]; then
+            echo "Error: Only 'release/*' branches can be merged into 'main'!"
+            exit 1
+          fi
