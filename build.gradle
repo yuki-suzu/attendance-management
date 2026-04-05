@@ -79,10 +79,6 @@ dependencies {
     // jOOQのSQL解析エンジン(Table定義Javaクラスの自動生成)
     jooqGenerator "org.jooq:jooq-meta-extensions:${jooqVer}"
 
-    // TODO DB実行後にTestに移行
-    implementation 'org.springframework.boot:spring-boot-h2console'
-    runtimeOnly 'com.h2database:h2'
-
     // Lombok & MapStruct Annotation Processors
     // ※注意：コンパイル時の処理順序はLombok → MapStruct の順
     compileOnly 'org.projectlombok:lombok'
@@ -95,7 +91,9 @@ dependencies {
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:junit-jupiter'
 }
 
 // ===================================================

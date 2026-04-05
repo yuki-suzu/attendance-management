@@ -9,15 +9,17 @@ box "Spring Boot アプリケーション" #LightCyan
     participant "Cleanup\nTask/API" as Cleanup
     participant "Check\nTask" as Task
 end box
-database "チェック済みID TBL" as DB
-participant "Harmos API" as Harmos
+database "チェック済みID TBL" as DB_checked
+database "従業員マスタ TBL" as DB_user
+database "勤務区分マスタ TBL" as DB_seg
+participant "Hrmos API" as Hrmos
 queue "通知処理 (MQ / API)" as MQ
 
 == ① お掃除タスク (毎日08:50 定期実行) ==
 note over Cron: cron="0 50 8 * * *"
 Cron -> Cleanup : 起動
 activate Cleanup
-Cleanup -> DB : 本日分の「チェック済みID TBL」をクリア
+Cleanup -> DB_checked : 本日分の「チェック済みID TBL」をクリア
 Cron <-- Cleanup : 終了
 deactivate Cleanup
 
@@ -36,21 +38,21 @@ alt 現在時刻が 09:00〜15:00 の範囲外
 end
 
 ' === メインロジック（営業時間内のみ実行） ===
-Task -> DB : 1. 本日の「チェック済みID一覧」を取得
-Task -> Harmos : 2. 従業員マスタを取得\n(※チェック済みIDは除く)
+Task -> DB_checked : 1. 本日の「チェック済みID一覧」を取得
+Task -> DB_user : 2. 従業員マスタを取得\n(※チェック済みIDは除く)
 
 alt 3. 対象データが1件もない場合
     Cron <-- Task : 処理スキップして終了
 end
 
-Task -> Task : 4. IDと基準勤務開始時間を取得
+Task -> DB_seg : 4. 基準勤務開始時間を取得
 Task -> Task : 5. 基準勤務開始時間に到達している\n社員IDを抽出しList作成
 
-Task -> Harmos : 6. 上記Listを元に本日の「出勤情報」を取得
+Task -> Hrmos : 6. 上記Listを元に本日の「出勤情報」を取得
 
 loop 抽出した社員(List)ごと
     alt 7. (出勤 ＆ 打刻済み) OR (出勤以外)
-        Task -> DB : 「チェック済みID TBL」に登録
+        Task -> DB_checked : 「チェック済みID TBL」に登録
     else 8. (出勤 ＆ 出勤時刻が未設定)
         Task -> MQ : 通知連携処理へ飛ばす\n(社員ID, 社員名, 部門)
     end
