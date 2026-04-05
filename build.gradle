@@ -94,6 +94,9 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.testcontainers:junit-jupiter'
+
+    // ローカル開発時のみ有効になる（本番ビルドには含まれない）
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 }
 
 // ===================================================

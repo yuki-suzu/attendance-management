@@ -1,0 +1,9 @@
+### 従業員マスター同期API（POST）
+POST http://localhost:8081/api/v1/admin/employees/sync
+Content-Type: application/json
+
+### 👈 この「###」がリクエストの区切り線です。下に別のAPIを書き足せます。
+
+### 従業員一覧取得API（GET）※将来作る予定のもの
+GET http://localhost:8081/api/v1/employees
+Accept: application/json

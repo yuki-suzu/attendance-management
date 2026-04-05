@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:16-alpine # 動作が軽いalpine版を推奨
+    ports:
+      - "5432" # ホスト側のポートを指定しない（Springに自動割り当てさせる）のがモダンなやり方
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: attendance_db
+    # コンテナを再起動してもデータを残したい場合はボリュームを指定
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:
