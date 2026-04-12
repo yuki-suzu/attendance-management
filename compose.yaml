@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:16-alpine # 動作が軽いalpine版を推奨
     ports:
-      - "5432" # ホスト側のポートを指定しない（Springに自動割り当てさせる）のがモダンなやり方
+      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password

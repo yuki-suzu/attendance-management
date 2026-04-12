@@ -1,11 +1,11 @@
+debug: false
 server:
   port: ${SERVER_PORT:8081}
 spring:
   application:
     name: attendance-service
-config:
-  # パスを指定するだけ。optional: をつけておけば、本番(k8s)でファイルが無くてもエラーになりません
-  import: optional:file:../infra/env/.env
+  config:
+    import: file:../infra/env/.env[.properties]
   jackson:
     property-naming-strategy: SNAKE_CASE
   # ===================================================
@@ -50,3 +50,17 @@ app:
     client-secret: ${LINEWORKS_CLIENT_SECRET:}
     service-account: ${LINEWORKS_SERVICE_ACCOUNT:}
     private-key: ${LINEWORKS_PRIVATE_KEY:}
+
+# ===================================================
+# API仕様書
+# ===================================================
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+logging:
+  level:
+    # 自身のパッケージ配下のみ DEBUG レベルを出力する
+    com.computer_rescuer.attendance_management: DEBUG

@@ -16,5 +16,5 @@ public interface FetchEmployeePort {
    *
    * @return システム共通の従業員モデル（{@link Employee}）のリスト
    */
-  List<Employee> fetchAllEmployees();
+  List<Employee> fetchAll();
 }

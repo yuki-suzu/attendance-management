@@ -28,18 +28,19 @@ public class SyncEmployeeInteractor implements SyncEmployeeUseCase {
   private final EmployeeRepositoryPort employeeRepositoryPort;
 
   @Override
-  @Transactional
+  @Transactional(rollbackFor = Exception.class)
   public void syncEmployees() {
     log.info("従業員マスターの同期処理を開始します...");
 
     // 1. 外部システムから全従業員を取得
-    List<Employee> employees = fetchEmployeePort.fetchAllEmployees();
+    List<Employee> employees = fetchEmployeePort.fetchAll();
     log.info("外部システムから {} 件の従業員情報を取得しました。", employees.size());
 
     if (employees.isEmpty()) {
       log.warn("取得した従業員情報が0件のため、同期処理をスキップします。");
       return;
     }
+    log.debug(employees.toString());
 
     // 2. DBの従業員マスタを全削除
     employeeRepositoryPort.deleteAllEmployees();

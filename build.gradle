@@ -51,6 +51,7 @@ ext {
     mapstructVer = '1.5.5.Final'
     lombokMapstructBindingVer = '0.2.0'
     jooqVer = dependencyManagement.importedProperties['jooq.version']
+    testcontainersVersion = "1.19.7"
 }
 // ===================================================
 // 依存関係
@@ -74,6 +75,7 @@ dependencies {
     // Tools
     // DB
     runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'org.flywaydb:flyway-database-postgresql'
     // MapStruct（マッピング自動生成）
     implementation "org.mapstruct:mapstruct:${mapstructVer}"
     // jOOQのSQL解析エンジン(Table定義Javaクラスの自動生成)
@@ -92,8 +94,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:postgresql'
-    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation "org.testcontainers:postgresql:${testcontainersVersion}"
+    testImplementation "org.testcontainers:junit-jupiter:${testcontainersVersion}"
 
     // ローカル開発時のみ有効になる（本番ビルドには含まれない）
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'

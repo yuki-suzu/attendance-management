@@ -1,6 +1,7 @@
 package com.computer_rescuer.attendance_management.adapter.out.hrmos;
 
-import com.computer_rescuer.attendance_management.adapter.out.hrmos.client.HrmosApiClient;
+import com.computer_rescuer.attendance_management.adapter.out.hrmos.client.HrmosAuthApi;
+import com.computer_rescuer.attendance_management.adapter.out.hrmos.client.HrmosUserApi;
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.mapper.HrmosUserMapper;
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosUser;
 import com.computer_rescuer.attendance_management.application.port.out.FetchEmployeePort;
@@ -11,10 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * HRMOS APIを用いて従業員情報を取得する出力アダプターの実装クラス。
+ * HRMOS API を介して従業員情報を取得する出力アダプター。
  * <p>
- * {@link FetchEmployeePort} を実装し、アプリケーション層の要求に応じて HRMOS固有のAPIクライアント（{@link HrmosApiClient}）を呼び出します。
- * 取得したデータのドメインモデルへの変換は {@link HrmosUserMapper} に委譲（腐敗防止層）します。
+ * アプリケーション層から定義された {@link FetchEmployeePort} を実装し、 認証リソース ({@link HrmosAuthApi}) とユーザーリソース
+ * ({@link HrmosUserApi}) を 組み合わせて最新の従業員一覧を提供します。
  * </p>
  */
 @Slf4j
@@ -22,22 +23,35 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class HrmosEmployeeAdapter implements FetchEmployeePort {
 
-  private final HrmosApiClient apiClient;
-  private final HrmosUserMapper userMapper;
+  private final HrmosAuthApi authApi;
+  private final HrmosUserApi userApi;
+  private final HrmosUserMapper mapper;
 
+  /**
+   * HRMOS から全従業員情報を取得し、ドメインモデルのリストとして返却します。
+   * <p>
+   * 内部で HRMOS 認証 API を呼び出してアクセストークンを取得し、 それを用いてユーザー一覧 API からデータを収集、最終的にドメイン形式へ変換します。
+   * </p>
+   *
+   * @return 従業員ドメインモデルのリスト。データが存在しない場合は空のリストを返却。
+   * @throws com.computer_rescuer.attendance_management.adapter.out.exception.ExternalIntegrationException 外部
+   *                                                                                                       API
+   *                                                                                                       との通信エラー、または認証失敗時にスローされます。
+   */
   @Override
-  public List<Employee> fetchAllEmployees() {
-    log.info("HRMOSアダプター経由で従業員情報を取得します...");
+  public List<Employee> fetchAll() {
+    log.info("HRMOS アダプター経由で従業員情報の全件取得を開始します。");
 
-    // 1. HRMOS APIから一時Tokenを取得
-    String token = apiClient.fetchToken();
+    // 1. 認証リソースからトークンを取得
+    String token = authApi.fetchToken();
 
-    // 2. Tokenを使用してユーザー一覧を取得
-    List<HrmosUser> hrmosUsers = apiClient.fetchUsers(token);
+    // 2. ユーザーリソースから生データを取得
+    List<HrmosUser> hrmosUsers = userApi.fetchUsers(token);
 
-    // 3. Mapperに委譲して、HRMOSモデルからドメインモデルへ一括変換
-    return hrmosUsers.stream()
-        .map(userMapper::toDomain)
-        .toList();
+    // 3. ドメインモデルへマッピングして返却
+    List<Employee> employees = mapper.toDomainList(hrmosUsers);
+
+    log.info("HRMOS から {} 件の従業員情報をドメインモデルへ変換しました。", employees.size());
+    return employees;
   }
 }

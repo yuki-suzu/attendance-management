@@ -1,42 +1,52 @@
 package com.computer_rescuer.attendance_management.adapter.out.persistence;
 
-import com.computer_rescuer.attendance_management.adapter.out.persistence.entity.EmployeeEntity;
-import com.computer_rescuer.attendance_management.adapter.out.persistence.jdbc.EmployeeJdbcRepository;
-import com.computer_rescuer.attendance_management.adapter.out.persistence.mapper.EmployeePersistenceMapper;
+import com.computer_rescuer.attendance_management.adapter.out.persistence.jooq.EmployeeJooqRepository;
+import com.computer_rescuer.attendance_management.adapter.out.persistence.mapper.EmployeeJooqMapper;
 import com.computer_rescuer.attendance_management.application.port.out.EmployeeRepositoryPort;
 import com.computer_rescuer.attendance_management.domain.model.Employee;
+import com.computer_rescuer.attendance_management.generated.jooq.tables.records.MEmployeeRecord;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * 従業員情報の永続化を担当する出力アダプターの実装クラス。
+ * 従業員データの永続化に関する外部ポート（RepositoryPort）の実装アダプター。
+ * <p>
+ * アプリケーション層(Interactor)からの要求を受け付け、 内部のリポジトリやマッパーを組み合わせてデータベース操作を制御します。
+ * アプリケーション層に対して、jOOQなどの具体的なデータアクセス技術を隠蔽します。
+ * </p>
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class EmployeePersistenceAdapter implements EmployeeRepositoryPort {
 
-  private final EmployeeJdbcRepository repository;
-  private final EmployeePersistenceMapper mapper;
+  private final EmployeeJooqRepository jooqRepository;
+  private final EmployeeJooqMapper mapper;
 
+  /**
+   * 従業員マスタ(M_EMPLOYEE)の全データを削除します。
+   */
   @Override
   public void deleteAllEmployees() {
-    log.info("従業員マスタ(m_employee)のデータを全件削除します...");
-    repository.deleteAllFast();
+    log.info("データベースの従業員マスタ(m_employee)を全件削除しています...");
+    jooqRepository.deleteAll();
   }
 
+  /**
+   * ドメインモデルの従業員情報リストをデータベースに一括登録(Batch Insert)します。
+   *
+   * @param employees 登録対象となるドメインモデルの従業員リスト
+   */
   @Override
   public void saveAll(List<Employee> employees) {
-    log.info("従業員マスタに {} 件のデータを一括登録(Batch Insert)します...", employees.size());
+    log.info("従業員マスタに {} 件のデータを一括登録(Batch Insert)しています...", employees.size());
 
-    // 1. ドメインモデル -> DBエンティティに変換
-    List<EmployeeEntity> entities = employees.stream()
-        .map(mapper::toEntity)
-        .toList();
+    // ドメインモデルをjOOQの永続化モデルに変換
+    List<MEmployeeRecord> records = mapper.toRecords(employees);
 
-    // 2. Spring Data JDBC の saveAll (自動的にJDBCバッチインサートが実行されます)
-    repository.saveAll(entities);
+    // jOOQリポジトリへ委譲
+    jooqRepository.batchInsert(records);
   }
 }
