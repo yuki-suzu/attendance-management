@@ -1,36 +1,31 @@
+debug: false
 server:
   port: ${SERVER_PORT:8081}
-
 spring:
   application:
     name: attendance-service
-
+  config:
+    import: file:../infra/env/.env[.properties]
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   # ===================================================
   # データソース & HikariCP設定
   # ===================================================
   datasource:
-    # 単体テストは一瞬で終わらせるため、H2の「PostgreSQL互換モード」を使う
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-    # TODO DB構築までコメントアウト
-  #  datasource:
-  #    url: jdbc:postgresql://localhost:5432/attendance_db
-  #    username: postgres
-  #    password: ${DB_PASSWORD:password}
-  #    driver-class-name: org.postgresql.Driver
-  #
-  #    hikari:
-  #      # プール内の最大コネクション数
-  #      maximum-pool-size: 10
-  #      # 常に保持しておく最低限の待機コネクション数
-  #      minimum-idle: 2
-  #      # コネクション取得のタイムアウト時間（ミリ秒：デフォルト30秒）
-  #      connection-timeout: 30000
-  #      # コネクションの最大生存時間（ミリ秒：デフォルト30分）※DB側の切断設定より短くするのが鉄則！
-  #      max-lifetime: 1800000
-
+    # ローカル（IDEからの起動時）は、SpringがDocker Composeを検知してこの値を「自動で上書き」して繋ぐ
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:attendance_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # プール内の最大コネクション数
+      maximum-pool-size: 10
+      # 常に保持しておく最低限の待機コネクション数
+      minimum-idle: 2
+      # コネクション取得のタイムアウト時間（ミリ秒：デフォルト30秒）
+      connection-timeout: 30000
+      # コネクションの最大生存時間（ミリ秒：デフォルト30分）※DB側の切断設定より短くするのが鉄則！
+      max-lifetime: 1800000
   # ===================================================
   # インフラツール設定 (Flyway / jOOQ)
   # ===================================================
@@ -38,20 +33,34 @@ spring:
     # 本番環境では勝手に流さない（CI/CDで制御する）
     enabled: ${SPRING_FLYWAY_ENABLED:false}
     baseline-on-migrate: true
-
   jooq:
     sql-dialect: postgres
-
 # ===================================================
-# 外部API連携設定 (Hermos / LINE WORKS)
+# 外部API連携設定 (Hrmos / LINE WORKS)
 # ===================================================
 app:
-  hermos:
-    base-url: "https://api.hermos.inc/v1"
-    api-token: ${HERMOS_API_TOKEN:}
-  lineworks:
+  hrmos:
+    api:
+      company-url: ${HRMOS_COMPANY_URL} # 環境変数から取得
+      secret-key: ${HRMOS_SECRET_KEY}   # 環境変数から取得
+      base-url: ${HRMOS_BASE_URL:https://ieyasu.co/}api/${app.hrmos.api.company-url}${HRMOS_API_VERSION:/v1}
+  line-works:
     base-url: "https://www.worksapis.com/v1.0"
     client-id: ${LINEWORKS_CLIENT_ID:}
     client-secret: ${LINEWORKS_CLIENT_SECRET:}
     service-account: ${LINEWORKS_SERVICE_ACCOUNT:}
     private-key: ${LINEWORKS_PRIVATE_KEY:}
+
+# ===================================================
+# API仕様書
+# ===================================================
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+logging:
+  level:
+    # 自身のパッケージ配下のみ DEBUG レベルを出力する
+    com.computer_rescuer.attendance_management: DEBUG

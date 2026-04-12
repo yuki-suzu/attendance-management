@@ -1,0 +1,34 @@
+@startuml
+title マスター情報取得API
+
+skinparam maxMessageSize 150
+
+actor "システム管理者" as User
+
+box "Spring Boot アプリケーション" #LightCyan
+    participant "ユーザー一覧取得API" as GetUser
+    participant "マスター情報取得API" as GetMaster
+end box
+database "従業員マスタ TBL" as DB_user
+database "勤務区分マスタ TBL" as DB_seg
+participant "Hrmos API" as Hrmos
+
+== ① ユーザー情報取得 ==
+User -> GetUser++ : ユーザー情報取得API実行
+GetUser -> Hrmos : ユーザー一覧取得
+GetUser -> DB_user : ユーザー情報全削除
+GetUser -> DB_user : HRMOSからのユーザー情報をInsert
+User <-- GetUser-- : 終了
+
+|||
+
+== ② マスター情報取得 ==
+note right User: 更新頻度の低いマスタはまとめて更新する（今は一つだが他に必要であれば追加する）
+
+User -> GetMaster++ : マスター情報取得API実行
+GetMaster -> Hrmos : 勤務区分一覧取得
+GetMaster -> DB_user : 勤務区分一覧全削除
+GetMaster -> DB_user : HRMOSからの勤務区分一覧情報をInsert
+User <-- GetMaster-- : 終了
+
+@enduml
