@@ -75,23 +75,29 @@ class HrmosCoreHttpClient {
   /**
    * 指定されたエンドポイントからJSONリストを取得し、指定の型へ安全にデシリアライズします。
    * <p>
-   * ストリームの枯渇を防ぐため一旦文字列として着地させ、詳細なデバッグログを出力した上で、 階層構造を考慮したJSONパースを実行します。
+   * ページネーションを安全に処理するため、パスとパラメータを分離してURLを構築します。
    * </p>
    *
    * @param token         APIリクエストに必要なアクセストークン
    * @param path          呼び出し先のエンドポイントパス（例: "/users"）
+   * @param page          取得対象のページ番号（1から開始）
    * @param jsonKey       JSONレスポンス内で目的の配列が格納されているキー名。ルート配列の場合は null。
    * @param resourceName  ログ出力に使用するリソースの論理名（例: "従業員"）
    * @param typeReference Jacksonでのデシリアライズに必要な型参照オブジェクト
    * @param <T>           返却されるリストの要素型
-   * @return デシリアライズ済みのドメイン/レスポンスモデルのリスト。データが空の場合は空リストを返却。
-   * @throws ExternalIntegrationException API通信エラー、またはJSONのパースに失敗した場合
+   * @return デシリアライズ済みのモデルリスト
    */
-  <T> List<T> fetchAndParseList(String token, String path, String jsonKey,
+  <T> List<T> fetchAndParseList(String token, String path, int page, String jsonKey,
       String resourceName, TypeReference<List<T>> typeReference) {
-    log.info("HRMOSから {} 一覧を取得します...", resourceName);
+
+    log.info("HRMOSから {} 一覧を取得します（page: {}）", resourceName, page);
+
     String rawJson = restClient.get()
-        .uri(uriBuilder -> uriBuilder.path(path).queryParam("limit", 100).build())
+        .uri(uriBuilder -> uriBuilder
+            .path(path) // 👈 純粋なパスだけを渡す
+            .queryParam("limit", 100)
+            .queryParam("page", page)
+            .build())
         .header(HttpHeaders.AUTHORIZATION, "Token " + token)
         .accept(MediaType.APPLICATION_JSON)
         .retrieve()
@@ -104,6 +110,7 @@ class HrmosCoreHttpClient {
     if (log.isDebugEnabled()) {
       log.debug("◀︎ [HRMOS {} Raw JSON]:\n{}", path, rawJson);
     }
+
     if (rawJson == null || rawJson.isBlank()) {
       return List.of();
     }

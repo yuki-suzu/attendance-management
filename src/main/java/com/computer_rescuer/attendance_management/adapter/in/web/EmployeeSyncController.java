@@ -1,4 +1,4 @@
-package com.computer_rescuer.attendance_management.adapter.in.controller;
+package com.computer_rescuer.attendance_management.adapter.in.web;
 
 import com.computer_rescuer.attendance_management.adapter.in.model.ApiResponse;
 import com.computer_rescuer.attendance_management.application.port.in.SyncEmployeeUseCase;

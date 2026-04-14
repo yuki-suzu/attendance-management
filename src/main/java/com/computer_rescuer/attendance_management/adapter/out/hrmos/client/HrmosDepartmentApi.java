@@ -26,7 +26,7 @@ public class HrmosDepartmentApi {
    */
   public List<HrmosDepartment> fetchDepartments(String token) {
     return coreClient.fetchAndParseList(
-        token, "/departments", "departments", "部門", new TypeReference<>() {
+        token, "/departments", 1, "departments", "部門", new TypeReference<>() {
         }
     );
   }

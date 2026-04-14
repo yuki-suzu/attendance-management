@@ -6,19 +6,27 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
- * 勤務区分ドメインモデルからjOOQレコードへのマッピングを担当するマッパー。
- * <p>
- * 勤務区分(M_SEGMENT)テーブル固有のデータ変換ロジックをカプセル化します。
- * </p>
+ * 勤務区分ドメインモデルとjOOQレコードの相互変換を担当するマッパー。
  */
 @Component
 public class SegmentJooqMapper {
 
   /**
-   * 勤務区分ドメインモデルのリストをjOOQレコードのリストに変換します。
-   *
-   * @param segments 変換対象の勤務区分ドメインモデルリスト
-   * @return M_SEGMENTテーブル用のjOOQレコードリスト
+   * jOOQレコードをドメインモデルに変換します。
+   */
+  public Segment toDomain(MSegmentRecord r) {
+    return new Segment(
+        r.getId(),
+        r.getTitle(),
+        r.getDisplayTitle(),
+        r.getStatus(),
+        r.getStartAt(),
+        r.getEndAt()
+    );
+  }
+
+  /**
+   * ドメインモデルをjOOQレコードに変換します（既存メソッド）。
    */
   public List<MSegmentRecord> toRecords(List<Segment> segments) {
     return segments.stream()

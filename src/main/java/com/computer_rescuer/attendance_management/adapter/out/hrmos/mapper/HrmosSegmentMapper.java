@@ -4,6 +4,7 @@ import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosS
 import com.computer_rescuer.attendance_management.domain.model.Segment;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import org.mapstruct.Mapper;
 
@@ -13,32 +14,24 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface HrmosSegmentMapper {
 
-  /**
-   * HRMOSの勤務区分モデルをドメインモデルに変換します。
-   *
-   * @param hrmosSegment 変換元のHRMOS勤務区分モデル
-   * @return 変換後の勤務区分ドメインモデル
-   */
   Segment toDomain(HrmosSegment hrmosSegment);
 
-  /**
-   * HRMOSの勤務区分モデルリストをドメインモデルリストに一括変換します。
-   *
-   * @param hrmosSegments 変換元のリスト
-   * @return 変換後のリスト
-   */
   List<Segment> toDomainList(List<HrmosSegment> hrmosSegments);
 
   /**
-   * HRMOSから連携された日時（OffsetDateTime）から、ドメインモデルで必要な時間（LocalTime）のみを抽出します。
+   * HRMOSから連携された日時（OffsetDateTime）から、日本時間（JST）における時間（LocalTime）のみを抽出します。
    * <p>
-   * MapStructによる自動マッピング時に、型の不一致を解消するために自動的に利用されます。
+   * コンテナ環境等でUTCに正規化されてデシリアライズされた場合でも、 確実に日本時間の「時計の針（例: 09:00）」として取り扱うための補正を行います。
    * </p>
    *
    * @param value タイムゾーン付きの日時データ
-   * @return 抽出された時間データ（入力がnullの場合はnull）
+   * @return 日本時間ベースの抽出された時間データ（入力がnullの場合はnull）
    */
   default LocalTime map(OffsetDateTime value) {
-    return value == null ? null : value.toLocalTime();
+    if (value == null) {
+      return null;
+    }
+    // UTC(00:00Z)になっていても、日本時間(+09:00)の視点に変換してから時間を抽出する
+    return value.atZoneSameInstant(ZoneId.of("Asia/Tokyo")).toLocalTime();
   }
 }

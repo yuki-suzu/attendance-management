@@ -26,7 +26,7 @@ public class HrmosSegmentApi {
    */
   public List<HrmosSegment> fetchSegments(String token) {
     return coreClient.fetchAndParseList(
-        token, "/segments", "segments", "勤務区分", new TypeReference<>() {
+        token, "/segments", 1, "segments", "勤務区分", new TypeReference<>() {
         }
     );
   }
