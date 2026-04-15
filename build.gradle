@@ -52,6 +52,8 @@ ext {
     lombokMapstructBindingVer = '0.2.0'
     jooqVer = dependencyManagement.importedProperties['jooq.version']
     testcontainersVersion = "1.19.7"
+    jjwtVer = "0.12.6"
+    shedlockVer = "5.13.0"
 }
 // ===================================================
 // 依存関係
@@ -80,6 +82,14 @@ dependencies {
     implementation "org.mapstruct:mapstruct:${mapstructVer}"
     // jOOQのSQL解析エンジン(Table定義Javaクラスの自動生成)
     jooqGenerator "org.jooq:jooq-meta-extensions:${jooqVer}"
+    // Java JWT
+    implementation "io.jsonwebtoken:jjwt-api:${jjwtVer}"
+    runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVer}"
+    runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVer}"
+
+    // Scheduleタスク
+    implementation "net.javacrumbs.shedlock:shedlock-spring:${shedlockVer}"
+    implementation "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:${shedlockVer}"
 
     // Lombok & MapStruct Annotation Processors
     // ※注意：コンパイル時の処理順序はLombok → MapStruct の順

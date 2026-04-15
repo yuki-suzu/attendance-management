@@ -43,13 +43,18 @@ app:
     api:
       company-url: ${HRMOS_COMPANY_URL} # 環境変数から取得
       secret-key: ${HRMOS_SECRET_KEY}   # 環境変数から取得
-      base-url: ${HRMOS_BASE_URL:https://ieyasu.co/}api/${app.hrmos.api.company-url}${HRMOS_API_VERSION:/v1}
+      base-url: ${HRMOS_BASE_URL:}api/${app.hrmos.api.company-url}${HRMOS_API_VERSION:/v1}
   line-works:
-    base-url: "https://www.worksapis.com/v1.0"
-    client-id: ${LINEWORKS_CLIENT_ID:}
-    client-secret: ${LINEWORKS_CLIENT_SECRET:}
-    service-account: ${LINEWORKS_SERVICE_ACCOUNT:}
-    private-key: ${LINEWORKS_PRIVATE_KEY:}
+    base-url: ${LW_BASE_URL:}
+    client-id: ${LW_CLIENT_ID:}
+    client-secret: ${LW_CLIENT_SECRET:}
+    service-account: ${LW_SERVICE_ACCOUNT:}
+    private-key: ${LW_PRIVATE_KEY_PATH:}
+    bot-id: ${LW_BOT_ID:}
+    alert-channel-id: ${LW_ALERT_CHANNEL_ID:}
+  batch:
+    # 環境変数 ALERT_CRON が設定されていればそれを使い、無ければデフォルト(毎朝9:30)を使う
+    alert-cron: ${ALERT_CRON:0 30 9 * * ?}
 
 # ===================================================
 # API仕様書
