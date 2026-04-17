@@ -38,6 +38,7 @@ public class HrmosDailyWorkRecordAdapter implements FetchDailyWorkRecordPort {
         break;
       }
       allRawData.addAll(paged);
+      log.info("🔍 HRMOSから届いた生データ（先頭1件）: {}", paged.get(5));
       if (paged.size() < 100) {
         break;
       }

@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.mapstruct.ReportingPolicy;
 
 /**
  * HRMOSの日次勤怠レスポンス（文字列主体）を、システム内で扱う純粋な実績データ（DailyWorkRecord）へ変換するマッパー。
@@ -21,7 +22,7 @@ import org.mapstruct.Named;
  * </p>
  */
 @Slf4j
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class HrmosWorkOutputMapper {
 
   private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
@@ -30,19 +31,37 @@ public abstract class HrmosWorkOutputMapper {
    * HRMOSの勤怠生データ（文字列）を、ドメイン層の純粋な勤怠実績データへ変換します。
    *
    * @param raw 変換元のHRMOS日次勤怠生データ
-   * @return 変換後の勤怠実績データ。パースに失敗した日時項目は null となります。
+   * @return 変換後の勤怠実績データ
    */
   @Mapping(source = "number", target = "employeeNumber")
   @Mapping(source = "day", target = "date", qualifiedByName = "parseDateString")
   @Mapping(source = "status", target = "applicationStatus")
   @Mapping(source = "startAt", target = "actualStartTime", qualifiedByName = "parseTimeString")
   @Mapping(source = "stampingStartAt", target = "stampingTime", qualifiedByName = "parseTimeString")
+  @Mapping(source = "departmentNames", target = "departmentName", qualifiedByName = "joinDepartments")
   public abstract DailyWorkRecord toDomain(HrmosDailyWorkOutput raw);
 
   /**
    * HRMOSの勤怠生データのリストを、勤怠実績データのリストへ一括変換します。
    */
   public abstract List<DailyWorkRecord> toDomainList(List<HrmosDailyWorkOutput> rawList);
+
+  /**
+   * 所属階層のリストを「 ＞ 」記号で結合した単一の文字列に変換します。
+   * <p>
+   * 例: ["開発本部", "システム部"] -> "開発本部 ＞ システム部"
+   * </p>
+   *
+   * @param departmentNames 所属階層名のリスト
+   * @return 結合された所属名。リストが空の場合は "未所属" を返します。
+   */
+  @Named("joinDepartments")
+  protected String joinDepartments(List<String> departmentNames) {
+    if (departmentNames == null || departmentNames.isEmpty()) {
+      return "未所属";
+    }
+    return String.join(" ＞ ", departmentNames);
+  }
 
   /**
    * 文字列の日付を {@link LocalDate} に安全に変換します。

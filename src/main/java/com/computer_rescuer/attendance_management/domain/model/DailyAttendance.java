@@ -16,16 +16,18 @@ import java.time.ZonedDateTime;
  * @param userId           従業員を一意に識別する内部ID
  * @param employeeNumber   従業員に付与された社員番号
  * @param fullName         従業員のフルネーム
+ * @param departmentName   所属名（多層階層結合済み） // 👈 追加
  * @param segmentTitle     割り当てられている勤務区分の名称
- * @param status           業務ロジックによって導き出された出勤ステータス（出勤済、遅刻など）
- * @param scheduledStartAt 勤務区分マスタに定義されている、本来出社すべき「出勤予定時刻」
- * @param actualStartAt    外部システム側で計算・丸め処理、または手動修正された後の「出勤実績時刻」
- * @param stampingAt       従業員が実際にタイムレコーダー等で記録した「純粋な打刻時刻」
+ * @param status           業務ロジックによって導き出された出勤ステータス
+ * @param scheduledStartAt 本来出社すべき「出勤予定時刻」
+ * @param actualStartAt    計算・修正後の「出勤実績時刻」
+ * @param stampingAt       実際に記録した「純粋な打刻時刻」
  */
 public record DailyAttendance(
     Integer userId,
     String employeeNumber,
     String fullName,
+    String departmentName,
     String segmentTitle,
     Status status,
     LocalTime scheduledStartAt,
@@ -33,22 +35,10 @@ public record DailyAttendance(
     LocalTime stampingAt
 ) {
 
-  /**
-   * 判定基準となるタイムゾーン（日本時間）
-   */
   private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
 
   /**
    * 勤怠実績と予定時刻を元に、出勤判定ロジックを適用して {@code DailyAttendance} を生成します。
-   * <p>
-   * このファクトリメソッドは、アプリケーション層（Interactor）から呼び出され、 ドメインの知識（遅刻の定義など）が外部に漏れ出すことを防ぎます。
-   * </p>
-   *
-   * @param record         外部システムから取得した、判定前の純粋な勤怠実績データ
-   * @param scheduledStart 勤務区分マスタから取得した、当日の出勤予定時刻（未設定の場合は null）
-   * @param targetDate     判定対象となる日付
-   * @param now            判定処理を実行している現在時刻（遅刻判定の基準として使用）
-   * @return 業務ルールに基づいたステータスを持つ、生成された出勤判定結果
    */
   public static DailyAttendance create(
       DailyWorkRecord record,
@@ -62,6 +52,7 @@ public record DailyAttendance(
         record.userId(),
         record.employeeNumber(),
         record.fullName(),
+        record.departmentName(), // 👈 追加
         record.segmentTitle(),
         status,
         scheduledStart,
@@ -71,11 +62,7 @@ public record DailyAttendance(
   }
 
   /**
-   * 勤怠実績と予定時刻、現在時刻を比較し、適切な出勤ステータスを判定します。
-   * <p>
-   * 【判定ルール】<br> 1. 手動修正や丸め処理後の出勤実績（actualStartTime）が存在すれば「出勤済」とする。<br> 2. 実績が存在せず、予定時刻を過ぎていれば「遅刻 /
-   * 打刻忘れ」とする。<br> 3. それ以外（予定時刻前など）は「未出勤」とする。
-   * </p>
+   * 勤怠実績と予定時刻、現在時刻を比較し、未打刻の人を出力する
    *
    * @param r              勤怠実績データ
    * @param scheduledStart 出勤予定時刻
@@ -85,27 +72,28 @@ public record DailyAttendance(
    */
   private static Status determineStatus(DailyWorkRecord r, LocalTime scheduledStart,
       LocalDate targetDate, ZonedDateTime now) {
-    // 実績時刻があれば出勤済（打刻漏れ後の手動修正も含む）
-    if (r.actualStartTime() != null) {
+
+    // 💡 ロジックを極限までシンプルに。
+    // 「生の打刻時刻」があるか？ あれば、何時であれ「出勤済（打刻済）」
+    if (r.stampingTime() != null) {
       return Status.ATTENDED;
     }
 
-    // 実績がなく、予定時刻が存在する場合の遅刻判定
+    // 打刻がなく、予定時刻が存在する場合
     if (scheduledStart != null) {
       LocalDateTime deadlineTime = LocalDateTime.of(targetDate, scheduledStart);
 
-      // 予定時刻が翌日扱いの場合（夜勤など）の補正
+      // 夜勤等の補正
       if (r.nextDayStart() != null) {
         deadlineTime = deadlineTime.plusDays(r.nextDayStart());
       }
 
-      // 現在時刻が予定時刻（デッドライン）を過ぎていれば遅刻扱い
+      // 💡 予定時刻を過ぎているのに、stampingTime が null なら「未打刻」確定
       if (now.isAfter(deadlineTime.atZone(JST))) {
         return Status.LATE_OR_FORGOT;
       }
     }
 
-    // それ以外は未出勤
     return Status.NOT_ATTENDED;
   }
 

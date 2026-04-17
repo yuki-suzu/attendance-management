@@ -14,4 +14,10 @@ public record Segment(
     LocalTime endAt
 ) {
 
+  /**
+   * 💡 マスタの「状態（status）」に基づき、出勤すべき日であるかを判定します。 1: 勤務, 2: 休日・休暇, 3: その他
+   */
+  public boolean isWorkingDay() {
+    return Integer.valueOf(1).equals(status);
+  }
 }
