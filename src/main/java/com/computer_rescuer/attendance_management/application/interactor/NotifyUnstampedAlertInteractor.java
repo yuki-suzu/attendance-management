@@ -1,11 +1,11 @@
 package com.computer_rescuer.attendance_management.application.interactor;
 
-import com.computer_rescuer.attendance_management.adapter.out.hrmos.mapper.HrmosStampMapper;
+import com.computer_rescuer.attendance_management.adapter.out.hrmos.mapper.HrmosStampLogMapper;
 import com.computer_rescuer.attendance_management.application.port.in.NotifyUnstampedAlertUseCase;
 import com.computer_rescuer.attendance_management.application.port.out.FetchDailyWorkRecordPort;
 import com.computer_rescuer.attendance_management.application.port.out.FetchEmployeeDepartmentPort;
-import com.computer_rescuer.attendance_management.application.port.out.FetchHrmosStampPort;
 import com.computer_rescuer.attendance_management.application.port.out.FetchSegmentPort;
+import com.computer_rescuer.attendance_management.application.port.out.FetchStampLogPort;
 import com.computer_rescuer.attendance_management.application.port.out.SendAlertPort;
 import com.computer_rescuer.attendance_management.application.support.UnstampedAlertMessageFormatter;
 import com.computer_rescuer.attendance_management.domain.model.DailyAttendance;
@@ -40,11 +40,11 @@ import org.springframework.stereotype.Service;
 public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCase {
 
   private final FetchDailyWorkRecordPort fetchDailyWorkRecordPort;
-  private final FetchHrmosStampPort fetchHrmosStampPort;
+  private final FetchStampLogPort fetchStampLogPort;
   private final FetchSegmentPort fetchSegmentPort;
   private final FetchEmployeeDepartmentPort fetchEmployeeDepartmentPort;
   private final SendAlertPort sendAlertPort;
-  private final HrmosStampMapper stampMapper;
+  private final HrmosStampLogMapper stampMapper;
   private final UnstampedAlertMessageFormatter messageFormatter;
 
   /**
@@ -59,7 +59,7 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
 
     // 1. データソースの集約
     var records = fetchDailyWorkRecordPort.fetchByDate(date);
-    var hrmosStamps = fetchHrmosStampPort.fetchByDate(date);
+    var stampLogs = fetchStampLogPort.fetchDailyLogs(date);
     var domainSegments = fetchSegmentPort.fetchAll();
 
     // 2. ローカルDBからの正確な所属名マップの構築
@@ -68,21 +68,21 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
         userIds);
 
     // 3. 突合用ルックアップデータの準備（打刻時刻と勤務区分マスタ）
-    Map<Integer, LocalTime> clockInMap = stampMapper.toClockInMap(hrmosStamps);
+    Map<Integer, LocalTime> clockInMap = stampMapper.toClockInMap(stampLogs);
+
     Map<String, Segment> segmentMap = domainSegments.stream()
         .collect(Collectors.toMap(
             Segment::title,
             s -> s,
-            (existing, replacement) -> existing // タイトル重複時の安全策
+            (existing, replacement) -> existing
         ));
 
     // 4. マスタ駆動の厳密な判定ロジックとパッチの適用
     var alerts = records.stream()
-        .filter(r -> !"0000000000".equals(r.employeeNumber())) // 社長以外
-        .filter(r -> {
-          // 勤務区分マスタを引き、マスタの status=1(勤務) であるか判定（未知の区分は除外）
-          Segment segment = segmentMap.get(r.segmentTitle());
-          return segment != null && segment.isWorkingDay();
+        .map(r -> {
+          // 💡 修正: r.userId() (Integer) で直接引く！ローカルDBの同期ズレに影響されない最強の突合
+          LocalTime stampingTime = clockInMap.get(r.userId());
+          return r.withStampingTime(stampingTime);
         })
         .map(r -> r.withStampingTime(clockInMap.get(r.userId()))
             .withDepartmentName(departmentMap.getOrDefault(r.userId(), "未所属")))

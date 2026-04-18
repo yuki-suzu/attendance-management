@@ -30,8 +30,7 @@ spring:
   # インフラツール設定 (Flyway / jOOQ)
   # ===================================================
   flyway:
-    # 本番環境では勝手に流さない（CI/CDで制御する）
-    enabled: ${SPRING_FLYWAY_ENABLED:false}
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
     baseline-on-migrate: true
   jooq:
     sql-dialect: postgres
@@ -68,4 +67,4 @@ springdoc:
 logging:
   level:
     # 自身のパッケージ配下のみ DEBUG レベルを出力する
-    com.computer_rescuer.attendance_management: DEBUG
+    com.computer_rescuer.attendance_management: { LOG_LEVEL_APP_ROOT:DEBUG }

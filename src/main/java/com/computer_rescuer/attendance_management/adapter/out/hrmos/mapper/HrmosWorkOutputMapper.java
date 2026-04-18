@@ -1,11 +1,12 @@
 package com.computer_rescuer.attendance_management.adapter.out.hrmos.mapper;
 
+import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosDailyWorkOutput;
 import com.computer_rescuer.attendance_management.domain.model.DailyWorkRecord;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +25,6 @@ import org.mapstruct.ReportingPolicy;
 @Slf4j
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class HrmosWorkOutputMapper {
-
-  private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
 
   /**
    * HRMOSの勤怠生データ（文字列）を、ドメイン層の純粋な勤怠実績データへ変換します。

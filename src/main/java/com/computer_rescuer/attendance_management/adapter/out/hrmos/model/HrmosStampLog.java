@@ -4,29 +4,32 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 /**
- * HRMOS 打刻ログ取得 API のレスポンス要素。
+ * HRMOS 打刻ログ取得 API のレスポンス要素（生データ）。
  * <p>
- * 整合性確保のため、日時は String で受け取り、マッパー層でパースを行います。
+ * 外部APIのJSON仕様と1:1で対応するデータ転送オブジェクト（DTO）です。
  * </p>
  *
  * @param userId          ユーザーID
  * @param createdAt       打刻時刻 (例: "2026-04-17T07:36:49.000+09:00")
- * @param stampType       打刻手段 (1:Web打刻等)
- * @param stampLodgmentId 打刻種別 (1:出勤, 2:退勤, 3:休憩開始, 4:休憩終了)
+ * @param stampType       打刻のアクション種別（1:出勤, 2:退勤...）
+ * @param stampLodgmentId 打刻種別詳細（拠点カスタム用・今回は判定に使用しない）
+ * @param lodgmentId      旧仕様の打刻種別詳細
+ * @param userAgent       打刻端末のUserAgent（デバッグ・調査用）
  */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record HrmosStampLog(
     Integer userId,
     String createdAt,
     Integer stampType,
-    Integer stampLodgmentId
+    Integer stampLodgmentId,
+    Integer lodgmentId,
+    String userAgent
 ) {
 
   /**
-   * このログが出勤打刻であるか判定します。
+   * このログが出勤系の打刻であるか判定します。
    */
   public boolean isClockIn() {
-    // stampLodgmentId == 1 が「出勤」を意味する
-    return Integer.valueOf(1).equals(stampLodgmentId);
+    return Integer.valueOf(1).equals(stampType);
   }
 }

@@ -4,10 +4,10 @@ import com.computer_rescuer.attendance_management.adapter.out.hrmos.client.Hrmos
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.client.HrmosWorkOutputApi;
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.mapper.HrmosWorkOutputMapper;
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosDailyWorkOutput;
+import com.computer_rescuer.attendance_management.adapter.out.hrmos.support.HrmosPaginationHelper;
 import com.computer_rescuer.attendance_management.application.port.out.FetchDailyWorkRecordPort;
 import com.computer_rescuer.attendance_management.domain.model.DailyWorkRecord;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,23 +28,11 @@ public class HrmosDailyWorkRecordAdapter implements FetchDailyWorkRecordPort {
   @Override
   public List<DailyWorkRecord> fetchByDate(LocalDate date) {
     String token = authApi.fetchToken();
-    List<HrmosDailyWorkOutput> allRawData = new ArrayList<>();
 
-    int page = 1;
-    while (true) {
-      List<HrmosDailyWorkOutput> paged = workOutputApi.fetchDailyWorkOutputs(token, date.toString(),
-          page);
-      if (paged == null || paged.isEmpty()) {
-        break;
-      }
-      allRawData.addAll(paged);
-      log.info("🔍 HRMOSから届いた生データ（先頭1件）: {}", paged.get(5));
-      if (paged.size() < 100) {
-        break;
-      }
-      page++;
-    }
+    List<HrmosDailyWorkOutput> allRawData = HrmosPaginationHelper.fetchAllPages("日次勤怠実績",
+        page -> workOutputApi.fetchDailyWorkOutputs(token, date.toString(), page)
+    );
 
-    return allRawData.stream().map(mapper::toDomain).toList();
+    return mapper.toDomainList(allRawData);
   }
 }

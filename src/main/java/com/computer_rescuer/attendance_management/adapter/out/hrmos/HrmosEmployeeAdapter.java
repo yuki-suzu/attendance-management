@@ -4,9 +4,9 @@ import com.computer_rescuer.attendance_management.adapter.out.hrmos.client.Hrmos
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.client.HrmosUserApi;
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.mapper.HrmosUserMapper;
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosUser;
+import com.computer_rescuer.attendance_management.adapter.out.hrmos.support.HrmosPaginationHelper;
 import com.computer_rescuer.attendance_management.application.port.out.FetchEmployeePort;
 import com.computer_rescuer.attendance_management.domain.model.Employee;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,37 +21,20 @@ public class HrmosEmployeeAdapter implements FetchEmployeePort {
   private final HrmosUserApi userApi;
   private final HrmosUserMapper mapper;
 
+  // 💡 修正後
   @Override
   public List<Employee> fetchAll() {
     log.info("HRMOS アダプター経由で従業員情報の全件取得を開始します。");
-
     String token = authApi.fetchToken();
-    List<HrmosUser> allHrmosUsers = new ArrayList<>();
 
-    // ページネーションを加味した全件取得ループ
-    int page = 1;
-    while (true) {
-      log.debug("従業員情報を取得中... (ページ: {})", page);
-      List<HrmosUser> pagedUsers = userApi.fetchUsers(token, page);
-
-      // データが空なら終了
-      if (pagedUsers == null || pagedUsers.isEmpty()) {
-        break;
-      }
-
-      allHrmosUsers.addAll(pagedUsers);
-
-      // 取得件数が上限(100件)未満なら、次ページはないと判断して終了
-      if (pagedUsers.size() < 100) {
-        break;
-      }
-      page++;
-    }
+    // 💡 ヘルパーに委譲！数十行のループがたった3行に。
+    List<HrmosUser> allHrmosUsers = HrmosPaginationHelper.fetchAllPages("従業員情報", page ->
+        userApi.fetchUsers(token, page)
+    );
 
     List<Employee> employees = mapper.toDomainList(allHrmosUsers);
     log.info("HRMOS から合計 {} 件の従業員情報を取得し、ドメインモデルへ変換しました。",
         employees.size());
-
     return employees;
   }
 }
