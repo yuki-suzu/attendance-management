@@ -5,17 +5,16 @@ spring:
   application:
     name: attendance-service
   config:
-    import: file:../infra/env/.env[.properties]
+    import: optional:file:../infra/env/.env[.properties]
   jackson:
     property-naming-strategy: SNAKE_CASE
   # ===================================================
   # データソース & HikariCP設定
   # ===================================================
   datasource:
-    # ローカル（IDEからの起動時）は、SpringがDocker Composeを検知してこの値を「自動で上書き」して繋ぐ
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:attendance_db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:password}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/attendance_db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       # プール内の最大コネクション数
@@ -52,8 +51,7 @@ app:
     bot-id: ${LW_BOT_ID:}
     alert-channel-id: ${LW_ALERT_CHANNEL_ID:}
   batch:
-    # 環境変数 ALERT_CRON が設定されていればそれを使い、無ければデフォルト(毎朝9:30)を使う
-    alert-cron: ${ALERT_CRON:0 30 9 * * ?}
+    alert-cron: ${ALERT_CRON:}
 
 # ===================================================
 # API仕様書
@@ -66,5 +64,4 @@ springdoc:
 
 logging:
   level:
-    # 自身のパッケージ配下のみ DEBUG レベルを出力する
-    com.computer_rescuer.attendance_management: { LOG_LEVEL_APP_ROOT:DEBUG }
+    com.computer_rescuer.attendance_management: ${LOG_LEVEL_APP_ROOT}

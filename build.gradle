@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.run.BootRun
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.5'
@@ -108,7 +110,21 @@ dependencies {
     testImplementation "org.testcontainers:junit-jupiter:${testcontainersVersion}"
 
     // ローカル開発時のみ有効になる（本番ビルドには含まれない）
-    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+//    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+}
+
+// ===================================================
+// ローカル用bootRun
+// ===================================================
+tasks.register("bootRunLocal", BootRun) {
+    group = "application"
+    description = "ローカル開発用（localプロファイル）でSpring Bootを起動します"
+
+    mainClass = tasks.bootRun.mainClass
+    classpath = sourceSets.main.runtimeClasspath
+
+    // 起動時に強制的に local プロファイルを指定する
+    systemProperty "spring.profiles.active", "local"
 }
 
 // ===================================================
