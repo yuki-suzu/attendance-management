@@ -9,7 +9,7 @@ plugins {
 }
 
 group = 'com.computer-rescuer'
-version = '0.0.1-SNAPSHOT'
+version = appVersion
 
 // ===================================================
 // ビルド構成
