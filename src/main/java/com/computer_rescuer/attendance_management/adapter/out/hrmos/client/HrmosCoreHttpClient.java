@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -18,7 +19,9 @@ import org.springframework.web.client.RestClient;
  * HRMOS APIとの低レベルなHTTP通信およびJSON解析をカプセル化するコアエンジン。
  * <p>
  * このクラスはパッケージプライベートとして定義され、外部（Adapter層など）からの直接利用を禁止します。
- * エラーハンドリング、ログ出力、JSONパースの複雑さを引き受け、各種公開APIクラスに共通の通信基盤を提供します。
+ * エラーハンドリング、ログ出力、JSONパースの複雑さを引き受け、各種公開APIクラスに共通の通信基盤を提供します。 Springの
+ * {@link org.springframework.web.util.UriBuilder} を使用して安全なURLを構築するため、 呼び出し元はパスにクエリ文字列（? や
+ * &）を含めず、パラメータマップとして渡す必要があります。
  * </p>
  */
 @Slf4j
@@ -46,9 +49,6 @@ class HrmosCoreHttpClient {
 
   /**
    * HRMOSの認証エンドポイントから一時アクセストークンを取得します。
-   * <p>
-   * 設定ファイルに定義されたシークレットキーを用いてBasic認証を行い、 各種API操作に必須となるトークンを返却します。
-   * </p>
    *
    * @return 取得したアクセストークン文字列
    * @throws ExternalIntegrationException 通信エラー、またはレスポンスからトークンが取得できなかった場合
@@ -73,31 +73,53 @@ class HrmosCoreHttpClient {
   }
 
   /**
-   * 指定されたエンドポイントからJSONリストを取得し、指定の型へ安全にデシリアライズします。
+   * 任意のクエリパラメータなしでJSONリストを取得します（後方互換性用メソッド）。
    * <p>
-   * ページネーションを安全に処理するため、パスとパラメータを分離してURLを構築します。
+   * ページング用の標準パラメータ（limit=100, page=N）のみでリクエストを行う場合に使用します。
    * </p>
-   *
-   * @param token         APIリクエストに必要なアクセストークン
-   * @param path          呼び出し先のエンドポイントパス（例: "/users"）
-   * @param page          取得対象のページ番号（1から開始）
-   * @param jsonKey       JSONレスポンス内で目的の配列が格納されているキー名。ルート配列の場合は null。
-   * @param resourceName  ログ出力に使用するリソースの論理名（例: "従業員"）
-   * @param typeReference Jacksonでのデシリアライズに必要な型参照オブジェクト
-   * @param <T>           返却されるリストの要素型
-   * @return デシリアライズ済みのモデルリスト
    */
   <T> List<T> fetchAndParseList(String token, String path, int page, String jsonKey,
       String resourceName, TypeReference<List<T>> typeReference) {
+    return fetchAndParseList(token, path, page, Map.of(), jsonKey, resourceName, typeReference);
+  }
+
+  /**
+   * 指定されたエンドポイントパスと任意のクエリパラメータからJSONリストを取得し、デシリアライズします。
+   * <p>
+   * SpringのUriBuilderは、{@code path} 内の特殊文字（? や &）を自動的にURLエンコード（%3F などに変換）します。
+   * そのため、クエリパラメータをパス文字列に直接結合するのではなく、{@code extraQueryParams} として 分離して渡すことで、安全かつ正確なAPIリクエスト URL
+   * を構築します。
+   * </p>
+   *
+   * @param token            APIリクエストに必要なアクセストークン
+   * @param path             呼び出し先のエンドポイントパス（例: "/stamp_logs/user/17"）※クエリを含めない純粋なパス
+   * @param page             取得対象のページ番号（1から開始）
+   * @param extraQueryParams パスに追加する任意のクエリパラメータ（例: from, to）
+   * @param jsonKey          JSONレスポンス内で目的の配列が格納されているキー名
+   * @param resourceName     ログ出力に使用するリソースの論理名（例: "従業員"）
+   * @param typeReference    Jacksonでのデシリアライズに必要な型参照オブジェクト
+   * @param <T>              返却されるリストの要素型
+   * @return デシリアライズ済みのモデルリスト
+   */
+  <T> List<T> fetchAndParseList(String token, String path, int page,
+      Map<String, String> extraQueryParams,
+      String jsonKey, String resourceName, TypeReference<List<T>> typeReference) {
 
     log.info("HRMOSから {} 一覧を取得します（page: {}）", resourceName, page);
 
     String rawJson = restClient.get()
-        .uri(uriBuilder -> uriBuilder
-            .path(path) // 👈 純粋なパスだけを渡す
-            .queryParam("limit", 100)
-            .queryParam("page", page)
-            .build())
+        .uri(uriBuilder -> {
+          // パスと標準のページネーションパラメータを設定
+          uriBuilder.path(path)
+              .queryParam("limit", 100)
+              .queryParam("page", page);
+
+          // 呼び出し元から渡された任意のクエリパラメータを安全にエンコードして追加
+          if (extraQueryParams != null && !extraQueryParams.isEmpty()) {
+            extraQueryParams.forEach(uriBuilder::queryParam);
+          }
+          return uriBuilder.build();
+        })
         .header(HttpHeaders.AUTHORIZATION, "Token " + token)
         .accept(MediaType.APPLICATION_JSON)
         .retrieve()

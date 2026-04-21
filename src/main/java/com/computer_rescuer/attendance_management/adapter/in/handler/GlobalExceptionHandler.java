@@ -1,5 +1,6 @@
 package com.computer_rescuer.attendance_management.adapter.in.handler;
 
+import com.computer_rescuer.attendance_management.adapter.in.exception.InvalidRequestParameterException;
 import com.computer_rescuer.attendance_management.adapter.in.model.ApiResponse;
 import com.computer_rescuer.attendance_management.adapter.in.model.ResultCode;
 import com.computer_rescuer.attendance_management.adapter.out.exception.ExternalIntegrationException;
@@ -39,6 +40,26 @@ public class GlobalExceptionHandler {
         .toList();
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(ApiResponse.error(ResultCode.E_VALIDATION, details));
+  }
+
+  /**
+   * クライアントからのリクエストパラメータに論理的な矛盾や違反があった場合のハンドリングを行います。
+   *
+   * @param ex 発生したリクエストパラメータ例外
+   * @return HTTP 400 (Bad Request) と、エラーメッセージを含むレスポンス
+   */
+  @ExceptionHandler(InvalidRequestParameterException.class)
+  public ResponseEntity<ApiResponse<Void>> handleInvalidRequestParameterException(
+      InvalidRequestParameterException ex) {
+    log.warn("リクエストパラメータが不正です: {}", ex.getMessage());
+
+    // 💡 詳細情報としてエラーメッセージをセット（単一のエラーとして扱う）
+    List<ApiResponse.Detail> details = List.of(
+        new ApiResponse.Detail("request_parameter", ex.getMessage()));
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        // ※ 既存の E_VALIDATION を使うか、必要に応じて E_BAD_REQUEST などを ResultCode に追加してください
         .body(ApiResponse.error(ResultCode.E_VALIDATION, details));
   }
 

@@ -1,9 +1,10 @@
 package com.computer_rescuer.attendance_management.domain.model;
 
+import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 /**
@@ -34,8 +35,6 @@ public record DailyAttendance(
     LocalTime actualStartAt,
     LocalTime stampingAt
 ) {
-
-  private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
 
   /**
    * 勤怠実績と予定時刻を元に、出勤判定ロジックを適用して {@code DailyAttendance} を生成します。

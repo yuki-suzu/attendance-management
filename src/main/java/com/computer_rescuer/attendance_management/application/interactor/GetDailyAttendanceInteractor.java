@@ -1,5 +1,7 @@
 package com.computer_rescuer.attendance_management.application.interactor;
 
+import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+
 import com.computer_rescuer.attendance_management.application.port.in.GetDailyAttendanceUseCase;
 import com.computer_rescuer.attendance_management.application.port.out.FetchDailyWorkRecordPort;
 import com.computer_rescuer.attendance_management.application.port.out.FetchSegmentPort;
@@ -8,7 +10,6 @@ import com.computer_rescuer.attendance_management.domain.model.DailyWorkRecord;
 import com.computer_rescuer.attendance_management.domain.model.Segment;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,6 @@ public class GetDailyAttendanceInteractor implements GetDailyAttendanceUseCase {
 
   private final FetchDailyWorkRecordPort fetchPort;
   private final FetchSegmentPort segmentPort;
-  private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
 
   @Override
   public List<DailyAttendance> execute(LocalDate targetDate) {
@@ -40,7 +40,7 @@ public class GetDailyAttendanceInteractor implements GetDailyAttendanceUseCase {
 
     List<DailyWorkRecord> records = fetchPort.fetchByDate(targetDate);
     List<Segment> segments = segmentPort.fetchAll();
-    
+
     Map<String, Segment> segmentMap = new java.util.HashMap<>();
     for (Segment segment : segments) {
       segmentMap.putIfAbsent(segment.title(), segment);

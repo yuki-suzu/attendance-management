@@ -1,10 +1,11 @@
 package com.computer_rescuer.attendance_management.adapter.out.hrmos.mapper;
 
+import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosSegment;
 import com.computer_rescuer.attendance_management.domain.model.Segment;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import org.mapstruct.Mapper;
 
@@ -32,6 +33,6 @@ public interface HrmosSegmentMapper {
       return null;
     }
     // UTC(00:00Z)になっていても、日本時間(+09:00)の視点に変換してから時間を抽出する
-    return value.atZoneSameInstant(ZoneId.of("Asia/Tokyo")).toLocalTime();
+    return value.atZoneSameInstant(JST).toLocalTime();
   }
 }
