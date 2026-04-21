@@ -79,8 +79,8 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
 
     // 4. マスタ駆動の厳密な判定ロジックとパッチの適用
     var alerts = records.stream()
+        .filter(r -> !"0000000000".equals(r.employeeNumber()))
         .map(r -> {
-          // 💡 修正: r.userId() (Integer) で直接引く！ローカルDBの同期ズレに影響されない最強の突合
           LocalTime stampingTime = clockInMap.get(r.userId());
           return r.withStampingTime(stampingTime);
         })

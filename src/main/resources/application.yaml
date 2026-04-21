@@ -51,7 +51,8 @@ app:
     bot-id: ${LW_BOT_ID:}
     alert-channel-id: ${LW_ALERT_CHANNEL_ID:}
   batch:
-    alert-cron: ${ALERT_CRON:}
+    alert-cron1: ${ALERT_CRON1:}
+    alert-cron2: ${ALERT_CRON2:}
 
 # ===================================================
 # API仕様書
