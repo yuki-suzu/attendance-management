@@ -4,8 +4,11 @@ import com.computer_rescuer.attendance_management.adapter.in.exception.InvalidRe
 import com.computer_rescuer.attendance_management.adapter.in.model.ApiResponse;
 import com.computer_rescuer.attendance_management.adapter.in.model.ResultCode;
 import com.computer_rescuer.attendance_management.adapter.out.exception.ExternalIntegrationException;
+import com.computer_rescuer.attendance_management.application.port.out.SendErrNoticePort;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -21,7 +24,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+  private final SendErrNoticePort sendErrNoticePort;
 
   /**
    * コントローラーの引数に対するバリデーション（@Valid / @Validated）で違反があった場合のハンドリングを行います。
@@ -76,9 +82,13 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Void>> handleExternalIntegrationException(
       ExternalIntegrationException ex) {
     log.error("外部システム連携エラーが発生しました: {}", ex.getMessage(), ex);
+    HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE;
+    ResultCode code = ResultCode.E_EXTERNAL_API;
 
-    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-        .body(ApiResponse.error(ResultCode.E_EXTERNAL_API, null));
+    sendErrorNotice(ex, status.toString(), code.name());
+
+    return ResponseEntity.status(status)
+        .body(ApiResponse.error(code, null));
   }
 
   /**
@@ -93,8 +103,38 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleSystemException(Exception ex) {
     log.error("予期せぬシステムエラーが発生しました", ex);
+    HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+    ResultCode code = ResultCode.E_SYSTEM;
 
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(ApiResponse.error(ResultCode.E_SYSTEM, null));
+    sendErrorNotice(ex, status.toString(), code.name());
+
+    return ResponseEntity.status(status)
+        .body(ApiResponse.error(code, null));
+  }
+
+  /**
+   * エラー通知処理
+   *
+   * @param ex     例外
+   * @param status ステータス
+   * @param code   結果コード
+   */
+  private void sendErrorNotice(Exception ex, String status, String code) {
+    try {
+      String message = String.format(
+          "🚨 【緊急】システムエラー発生\n" +
+              "・ステータス: %s\n" +
+              "・リザルトコード: %s\n" +
+              "・エラー内容: %s\n" +
+              "※詳細はサーバーログを確認してください。",
+          status, code, ExceptionUtils.getRootCauseMessage(ex)
+      );
+
+      sendErrNoticePort.send(message);
+
+    } catch (Exception e) {
+      // 💡 万が一LINE WORKSのAPIが落ちていても、エラーハンドリング自体を止めないための安全装置
+      log.error("【二次障害】LINE WORKSへのエラー通知に失敗しました。", e);
+    }
   }
 }

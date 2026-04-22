@@ -50,9 +50,11 @@ app:
     private-key: ${LW_PRIVATE_KEY_PATH:}
     bot-id: ${LW_BOT_ID:}
     alert-channel-id: ${LW_ALERT_CHANNEL_ID:}
+    system-manager-id: ${LW_APP_SYSTEM_MANAGER:}
   batch:
     alert-cron1: ${ALERT_CRON1:}
     alert-cron2: ${ALERT_CRON2:}
+    sync-master-cron: ${SYNC_MASTER_CRON:}
 
 # ===================================================
 # API仕様書

@@ -1,6 +1,8 @@
-package com.computer_rescuer.attendance_management.config;
+package com.computer_rescuer.attendance_management.infrastructure.config;
 
+import com.computer_rescuer.attendance_management.adapter.in.handler.ScheduledTaskErrorHandler;
 import javax.sql.DataSource;
+import lombok.RequiredArgsConstructor;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
@@ -15,9 +17,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
  */
 @Configuration
 @EnableScheduling
-// 💡 defaultLockAtMostFor: もしサーバーが死んでロックが解除されなくても、10分後には強制的にロックを解放する（安全装置）
 @EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
+@RequiredArgsConstructor
 public class SchedulerConfig {
+
+  private final ScheduledTaskErrorHandler scheduledTaskErrorHandler;
 
   /**
    * ShedLock が PostgreSQL を使ってロック管理を行うためのプロバイダー設定
@@ -39,6 +43,7 @@ public class SchedulerConfig {
     scheduler.setThreadNamePrefix("batch-thread-");
     scheduler.setWaitForTasksToCompleteOnShutdown(true);
     scheduler.setAwaitTerminationSeconds(60);
+    scheduler.setErrorHandler(scheduledTaskErrorHandler);
     return scheduler;
   }
 }

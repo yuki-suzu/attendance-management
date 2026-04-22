@@ -13,7 +13,8 @@ public record LineworksProperties(
     String serviceAccount,
     String privateKey,
     String botId,
-    String alertChannelId
+    String alertChannelId,
+    String systemManagerId
 ) {
 
 }
