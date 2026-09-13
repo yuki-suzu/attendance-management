@@ -1,0 +1,10 @@
+.gradle
+.idea
+build
+docker
+api-requests
+jshell
+sequenceDesign
+*.md
+.git
+.github
