@@ -1,7 +1,7 @@
 package com.computer_rescuer.attendance_management.adapter.out.hrmos.model;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 /**
  * HRMOSのユーザー情報（従業員マスタ）APIのレスポンス要素

@@ -2,6 +2,7 @@ package com.computer_rescuer.attendance_management.adapter.in.handler;
 
 import com.computer_rescuer.attendance_management.adapter.in.model.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.MethodParameter;
@@ -18,21 +19,21 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class ApiResponseAdvice implements ResponseBodyAdvice<Object> {
-  
+
   private final MessageSource messageSource;
 
   @Override
   public boolean supports(MethodParameter returnType,
-      Class<? extends HttpMessageConverter<?>> converterType) {
+      @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
     // 戻り値の型が ApiResponse の場合のみ beforeBodyWrite を実行する
     return ApiResponse.class.isAssignableFrom(returnType.getParameterType());
   }
 
   @Override
-  public Object beforeBodyWrite(Object body, MethodParameter returnType,
-      MediaType selectedContentType,
-      Class<? extends HttpMessageConverter<?>> selectedConverterType,
-      ServerHttpRequest request, ServerHttpResponse response) {
+  public Object beforeBodyWrite(Object body, @NonNull MethodParameter returnType,
+      @NonNull MediaType selectedContentType,
+      @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType,
+      @NonNull ServerHttpRequest request, @NonNull ServerHttpResponse response) {
 
     // Java 16+ のパターンマッチングで ApiResponse にキャスト
     if (body instanceof ApiResponse<?> apiResponse) {

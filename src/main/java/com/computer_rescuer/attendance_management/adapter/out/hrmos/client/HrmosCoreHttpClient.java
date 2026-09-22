@@ -3,9 +3,6 @@ package com.computer_rescuer.attendance_management.adapter.out.hrmos.client;
 import com.computer_rescuer.attendance_management.adapter.out.exception.ExternalIntegrationException;
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosTokenResponse;
 import com.computer_rescuer.attendance_management.infrastructure.property.HrmosProperties;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +11,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * HRMOS APIとの低レベルなHTTP通信およびJSON解析をカプセル化するコアエンジン。
@@ -30,19 +29,17 @@ class HrmosCoreHttpClient {
 
   private final RestClient restClient;
   private final HrmosProperties properties;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
   HrmosCoreHttpClient(RestClient.Builder restClientBuilder, HrmosProperties properties,
-      ObjectMapper objectMapper) {
+      JsonMapper jsonMapper) {
     this.properties = properties;
-    this.objectMapper = objectMapper;
+    this.jsonMapper = jsonMapper;
     this.restClient = restClientBuilder
         .baseUrl(properties.baseUrl())
         .requestInterceptor((request, body, execution) -> {
           log.info("▶︎ [外部APIリクエスト] {} {}", request.getMethod(), request.getURI());
-          if (log.isDebugEnabled()) {
-            log.debug("▶︎ [ヘッダー] {}", request.getHeaders());
-          }
+          log.debug("▶︎ [ヘッダー] {}", request.getHeaders());
           return execution.execute(request, body);
         }).build();
   }
@@ -129,18 +126,16 @@ class HrmosCoreHttpClient {
         })
         .body(String.class);
 
-    if (log.isDebugEnabled()) {
-      log.debug("◀︎ [HRMOS {} Raw JSON]:\n{}", path, rawJson);
-    }
+    log.debug("◀︎ [HRMOS {} Raw JSON]:\n{}", path, rawJson);
 
     if (rawJson == null || rawJson.isBlank()) {
       return List.of();
     }
 
     try {
-      JsonNode root = objectMapper.readTree(rawJson);
-      JsonNode dataNode = (jsonKey != null && root.has(jsonKey)) ? root.get(jsonKey) : root;
-      return objectMapper.readValue(dataNode.traverse(), typeReference);
+//      JsonNode root = jsonMapper.readTree(rawJson);
+//      JsonNode dataNode = (jsonKey != null && root.has(jsonKey)) ? root.get(jsonKey) : root;
+      return jsonMapper.readValue(rawJson, typeReference);
     } catch (Exception e) {
       log.error("{} のJSON解析に失敗しました。Raw JSON: {}", resourceName, rawJson, e);
       throw new ExternalIntegrationException(resourceName + "データ形式が予期せぬフォーマットです");

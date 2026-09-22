@@ -24,14 +24,6 @@ public enum StampType {
     this.description = description;
   }
 
-  public int getCode() {
-    return code;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
   public static StampType fromCode(Integer code) {
     if (code == null) {
       return UNKNOWN;
@@ -40,5 +32,13 @@ public enum StampType {
         .filter(type -> type.code == code)
         .findFirst()
         .orElse(UNKNOWN);
+  }
+
+  public int getCode() {
+    return code;
+  }
+
+  public String getDescription() {
+    return description;
   }
 }

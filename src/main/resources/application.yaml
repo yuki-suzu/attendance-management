@@ -9,10 +9,20 @@ spring:
   jackson:
     property-naming-strategy: SNAKE_CASE
   # ===================================================
+  # Kafka メッセージング設定 (Producer)
+  # ===================================================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:shared-kafka:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      properties:
+        spring.json.add.type.headers: false # 受信側で余計なクラス型ミスマッチを起こさない安全設定
+  # ===================================================
   # データソース & HikariCP設定
   # ===================================================
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/attendance_db
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -42,15 +52,12 @@ app:
       company-url: ${HRMOS_COMPANY_URL} # 環境変数から取得
       secret-key: ${HRMOS_SECRET_KEY}   # 環境変数から取得
       base-url: ${HRMOS_BASE_URL:}api/${app.hrmos.api.company-url}${HRMOS_API_VERSION:/v1}
-  line-works:
-    base-url: ${LW_BASE_URL:}
-    client-id: ${LW_CLIENT_ID:}
-    client-secret: ${LW_CLIENT_SECRET:}
-    service-account: ${LW_SERVICE_ACCOUNT:}
-    private-key: ${LW_PRIVATE_KEY_PATH:}
-    bot-id: ${LW_BOT_ID:}
-    alert-channel-id: ${LW_ALERT_CHANNEL_ID:}
-    system-manager-id: ${LW_APP_SYSTEM_MANAGER:}
+  kafka:
+    topics:
+      notification: ${APP_KAFKA_TOPIC_NOTIFICATION:notification-topic}
+      unstamped-alert: ${APP_KAFKA_TOPIC_UNSTAMPED_ALERT:unstamped-alert-topic}
+      unstamped-direct: ${APP_KAFKA_TOPIC_UNSTAMPED_DIRECT:unstamped-direct-topic}
+      attendance-irregularity: ${APP_KAFKA_TOPIC_ATTENDANCE_IRREGULARITY:attendance-irregularity-topic}
   batch:
     alert-cron1: ${ALERT_CRON1:}
     alert-cron2: ${ALERT_CRON2:}
@@ -67,4 +74,4 @@ springdoc:
 
 logging:
   level:
-    com.computer_rescuer.attendance_management: ${LOG_LEVEL_APP_ROOT}
+    com.computer_rescuer.attendance_management: ${LOG_LEVEL_APP_ROOT:INFO}

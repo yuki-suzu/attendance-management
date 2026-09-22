@@ -34,9 +34,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 # タイムゾーンを東京に設定
 ENV TZ=Asia/Tokyo
 
-# マウント用ディレクトリを事前に作成
-RUN mkdir -p /app/keys/lineworks
-
 # ビルド成果物のみをコピー
 COPY --from=builder /workspace/app/app.jar app.jar
 

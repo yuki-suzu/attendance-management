@@ -1,10 +1,10 @@
 package com.computer_rescuer.attendance_management.adapter.out.hrmos.client;
 
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosSegment;
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 /**
  * HRMOS 勤務区分（Segments）APIを呼び出すクライアント。
