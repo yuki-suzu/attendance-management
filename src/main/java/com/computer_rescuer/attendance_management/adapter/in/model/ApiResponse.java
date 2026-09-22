@@ -16,16 +16,6 @@ public record ApiResponse<T>(
     T data
 ) {
 
-  /**
-   * エラー詳細やバリデーション情報を格納するレコード
-   */
-  public record Detail(
-      String key,
-      String message
-  ) {
-
-  }
-
   // =========================================================================
   // 静的ファクトリメソッド群
   // =========================================================================
@@ -49,5 +39,15 @@ public record ApiResponse<T>(
    */
   public static ApiResponse<Void> error(ResultCode resultCode, List<Detail> detail) {
     return new ApiResponse<>(resultCode.name(), null, detail, null);
+  }
+
+  /**
+   * エラー詳細やバリデーション情報を格納するレコード
+   */
+  public record Detail(
+      String key,
+      String message
+  ) {
+
   }
 }

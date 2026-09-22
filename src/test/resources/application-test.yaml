@@ -15,9 +15,3 @@ app:
     # 単体テストでは絶対に本物のAPIを叩かないよう、ダミーURLにする
     base-url: "http://localhost:8080/mock-hermos"
     api-token: "dummy-token"
-  lineworks:
-    base-url: "http://localhost:8080/mock-lineworks"
-    client-id: "dummy"
-    client-secret: "dummy"
-    service-account: "dummy"
-    private-key: "dummy"

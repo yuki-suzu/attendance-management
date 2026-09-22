@@ -1,12 +1,12 @@
 package com.computer_rescuer.attendance_management.adapter.out.hrmos.client;
 
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosStampLog;
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 /**
  * HRMOS の「打刻履歴 API (/stamp_logs)」と通信を行うための専用クライアント。

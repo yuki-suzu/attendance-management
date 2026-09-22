@@ -6,8 +6,7 @@ import com.computer_rescuer.attendance_management.application.port.out.FetchDail
 import com.computer_rescuer.attendance_management.application.port.out.FetchEmployeeDepartmentPort;
 import com.computer_rescuer.attendance_management.application.port.out.FetchSegmentPort;
 import com.computer_rescuer.attendance_management.application.port.out.FetchStampLogPort;
-import com.computer_rescuer.attendance_management.application.port.out.SendAlertPort;
-import com.computer_rescuer.attendance_management.application.support.UnstampedAlertMessageFormatter;
+import com.computer_rescuer.attendance_management.application.port.out.NotifyUnstampedAlertPort;
 import com.computer_rescuer.attendance_management.domain.model.DailyAttendance;
 import com.computer_rescuer.attendance_management.domain.model.DailyAttendance.Status;
 import com.computer_rescuer.attendance_management.domain.model.DailyWorkRecord;
@@ -25,13 +24,8 @@ import org.springframework.stereotype.Service;
 /**
  * 未打刻アラート通知ユースケースの実装クラス。
  * <p>
- * 以下の手順で、外部システムの同期ラグやマスタ情報の不一致を解消し、正確な未打刻検知を実現します。
- * <ol>
- * <li>「日次勤怠(WorkOutputs)」からベースとなる対象者を抽出</li>
- * <li>「打刻ログ(StampLogs)」からリアルタイムの出勤事実を補完</li>
- * <li>ローカルDBの「従業員・部門マスタ」から正確な所属名を補完</li>
- * <li>「勤務区分マスタ(Segment)」のステータスに基づき、出勤義務の有無を厳格に判定</li>
- * </ol>
+ * HRMOS実績、打刻ログ、ローカル部門マスタ、勤務区分マスタを突き合わせて未打刻者を特定し、 出力ポート（{@link NotifyUnstampedAlertPort}）を通じて Kafka
+ * へイベントを発行します。
  * </p>
  */
 @Slf4j
@@ -43,15 +37,11 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
   private final FetchStampLogPort fetchStampLogPort;
   private final FetchSegmentPort fetchSegmentPort;
   private final FetchEmployeeDepartmentPort fetchEmployeeDepartmentPort;
-  private final SendAlertPort sendAlertPort;
+  private final NotifyUnstampedAlertPort notifyUnstampedAlertPort;
   private final HrmosStampLogMapper stampMapper;
-  private final UnstampedAlertMessageFormatter messageFormatter;
 
   /**
    * {@inheritDoc}
-   * <p>
-   * 未打刻アラートの検知・通知フローを制御します。
-   * </p>
    */
   @Override
   public void execute(LocalDate date) {
@@ -84,8 +74,7 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
           LocalTime stampingTime = clockInMap.get(r.userId());
           return r.withStampingTime(stampingTime);
         })
-        .map(r -> r.withStampingTime(clockInMap.get(r.userId()))
-            .withDepartmentName(departmentMap.getOrDefault(r.userId(), "未所属")))
+        .map(r -> r.withDepartmentName(departmentMap.getOrDefault(r.userId(), "未所属")))
         .map(r -> {
           Segment segment = segmentMap.get(r.segmentTitle());
           // 予定時刻が存在しない（null）区分の場合はそのまま null を渡し NPE を回避
@@ -95,14 +84,12 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
         .filter(attendance -> attendance.status() == Status.LATE_OR_FORGOT)
         .toList();
 
-    // 5. フォーマッターへの委譲と通知の実行
+    // 5. 通知出力ポートへ委譲（Kafka 経由で notification-service へ連携）
     if (!alerts.isEmpty()) {
       log.info("未打刻者を {} 名検知しました。対象日: {}", alerts.size(), date);
-
-      String message = messageFormatter.format(alerts, date);
-      sendAlertPort.send(message);
+      notifyUnstampedAlertPort.sendAlert(alerts);
     } else {
-      log.info("未打刻者は検知されませんでした。");
+      log.info("未打刻者は検知されませんでした。対象日: {}", date);
     }
   }
 }

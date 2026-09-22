@@ -54,11 +54,8 @@ public class GetDailyAttendanceInteractor implements GetDailyAttendanceUseCase {
           Segment masterSegment = segmentMap.get(r.segmentTitle());
 
           // マスタに存在し、かつステータスが 1(勤務) 以外（休日やその他）の場合は除外する
-          if (masterSegment != null && masterSegment.status() != 1) {
-            return false;
-          }
           // マスタに存在しないイレギュラーな名称の場合は、安全のため「出勤判定の対象」として残す
-          return true;
+          return masterSegment == null || masterSegment.status() == 1;
         })
         .map(r -> {
           Segment masterSegment = segmentMap.get(r.segmentTitle());
