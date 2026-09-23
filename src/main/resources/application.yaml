@@ -53,6 +53,7 @@ app:
       secret-key: ${HRMOS_SECRET_KEY}   # 環境変数から取得
       base-url: ${HRMOS_BASE_URL:}api/${app.hrmos.api.company-url}${HRMOS_API_VERSION:/v1}
   kafka:
+    direct-reminder-enabled: ${APP_KAFKA_DIRECT_REMINDER_ENABLED:false} # 未打刻警告DM送信の宛先制御フラグ（true:本人、false:管理者）
     topics:
       notification: ${APP_KAFKA_TOPIC_NOTIFICATION:notification-topic}
       unstamped-alert: ${APP_KAFKA_TOPIC_UNSTAMPED_ALERT:unstamped-alert-topic}
@@ -62,6 +63,8 @@ app:
     alert-cron1: ${ALERT_CRON1:}
     alert-cron2: ${ALERT_CRON2:}
     sync-master-cron: ${SYNC_MASTER_CRON:}
+    cleanup-cron: ${CLEANUP_CRON:}
+    monthly-summary-cron: ${MONTHLY_SUMMARY_CRON:}
 
 # ===================================================
 # API仕様書

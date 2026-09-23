@@ -1,20 +1,27 @@
 package com.computer_rescuer.attendance_management.application.port.out;
 
-import com.computer_rescuer.attendance_management.domain.model.DailyAttendance;
-import java.util.List;
+import com.computer_rescuer.attendance_management.adapter.out.kafka.dto.UnstampedAlertEvent;
+import com.computer_rescuer.attendance_management.adapter.out.kafka.dto.UnstampedDirectReminderEvent;
 
 /**
- * 未打刻アラートを外部システムへ送信するための出力ポート。
+ * 未打刻アラートイベントを外部メッセージング基盤へ送信するための出力ポート。
  * <p>
- * 判定結果（ドメインモデル）を、LINE WORKS 等の具体的な外部通知手段へ 受け渡すための抽象化インターフェースです。
+ * 管理者向けサマリー通知および本人向け個別DMリマインドの非同期ディスパッチ責務を定義します。
  * </p>
  */
 public interface NotifyUnstampedAlertPort {
 
   /**
-   * 判定された未打刻アラートの一覧を外部へ通知します。
+   * 管理者向けの未打刻サマリーアラートイベントを送信します。
    *
-   * @param alerts 通知対象となる出勤判定結果のリスト
+   * @param event 管理者向け未打刻アラートイベントDTO
    */
-  void sendAlert(List<DailyAttendance> alerts);
+  void sendManagerAlert(UnstampedAlertEvent event);
+
+  /**
+   * 従業員本人向けの未打刻個別DMリマインドイベントを送信します。
+   *
+   * @param event 本人向けリマインドイベントDTO
+   */
+  void sendDirectReminder(UnstampedDirectReminderEvent event);
 }
