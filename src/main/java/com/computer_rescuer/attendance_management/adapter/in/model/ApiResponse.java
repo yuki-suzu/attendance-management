@@ -35,6 +35,13 @@ public record ApiResponse<T>(
   }
 
   /**
+   * [成功] 返却データあり（GETなどでデータを返す場合）
+   */
+  public static <T> ApiResponse<List<T>> success(List<T> datas) {
+    return new ApiResponse<>(ResultCode.SUCCESS.name(), null, null, datas);
+  }
+
+  /**
    * [エラー] エラーメッセージと詳細情報（バリデーションエラー等）を返す場合
    */
   public static ApiResponse<Void> error(ResultCode resultCode, List<Detail> detail) {

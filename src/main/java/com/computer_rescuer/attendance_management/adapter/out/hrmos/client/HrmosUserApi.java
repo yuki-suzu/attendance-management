@@ -25,7 +25,7 @@ public class HrmosUserApi {
    */
   public List<HrmosUser> fetchUsers(String token, int page) {
     return coreClient.fetchAndParseList(
-        token, "/users", page, "users", "従業員", new TypeReference<>() {
+        token, "/users", page, "従業員", new TypeReference<>() {
         }
     );
   }

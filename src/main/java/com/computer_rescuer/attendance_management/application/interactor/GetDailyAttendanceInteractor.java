@@ -49,7 +49,7 @@ public class GetDailyAttendanceInteractor implements GetDailyAttendanceUseCase {
     ZonedDateTime now = ZonedDateTime.now(JST);
 
     return records.stream()
-        // 💡 修正: APIの「申請ステータス」ではなく、マスタの「勤務区分ステータス」で休日を弾く
+        // APIの「申請ステータス」ではなく、マスタの「勤務区分ステータス」で休日を弾く
         .filter(r -> {
           Segment masterSegment = segmentMap.get(r.segmentTitle());
 
