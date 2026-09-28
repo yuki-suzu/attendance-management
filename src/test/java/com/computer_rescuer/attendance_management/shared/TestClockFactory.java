@@ -1,6 +1,6 @@
 package com.computer_rescuer.attendance_management.shared;
 
-import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+import static com.computer_rescuer.attendance_management.shared.DateTimeSupports.JST;
 
 import java.time.Clock;
 import java.time.Instant;

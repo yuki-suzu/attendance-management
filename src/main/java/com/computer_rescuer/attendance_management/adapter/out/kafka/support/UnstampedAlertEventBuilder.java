@@ -91,7 +91,7 @@ public class UnstampedAlertEventBuilder {
     boolean directReminderEnabled = kafkaProperties.directReminderEnabled();
     if (!directReminderEnabled) {
       log.info(
-          "ℹ️ 本人向けDMが無効設定のため、管理者代理送信モード（email = null）でイベントを生成します。");
+          "ℹ️ 本人向けDMが無効設定のため、管理者代理送信モード（email = proxy）でイベントを生成します。");
     }
 
     List<UnstampedDirectReminderEvent.DirectReminderEmployee> directEmployees = alerts.stream()
@@ -99,9 +99,11 @@ public class UnstampedAlertEventBuilder {
         .map(a -> {
           Employee emp = employeeMap.get(a.userId());
 
-          // 💡 directReminderEnabled が false の時は強制的に null（代理送信合図）
+          // directReminderEnabled が false の時は強制的に proxy@example.com（代理送信合図）
           // true の時はマスタの値をそのまま連携（未登録なら null、空文字なら設定ミスとして伝達）
-          String email = directReminderEnabled && emp != null ? emp.email() : null;
+          String email = !directReminderEnabled
+              ? "proxy@example.com"
+              : (emp != null ? emp.email() : null);
 
           return new UnstampedDirectReminderEvent.DirectReminderEmployee(
               a.employeeNumber(),

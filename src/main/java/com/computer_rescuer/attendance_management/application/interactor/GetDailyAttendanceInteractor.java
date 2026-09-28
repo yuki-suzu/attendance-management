@@ -1,6 +1,6 @@
 package com.computer_rescuer.attendance_management.application.interactor;
 
-import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+import static com.computer_rescuer.attendance_management.shared.DateTimeSupports.JST;
 
 import com.computer_rescuer.attendance_management.application.port.in.GetDailyAttendanceUseCase;
 import com.computer_rescuer.attendance_management.application.port.out.FetchDailyWorkRecordPort;

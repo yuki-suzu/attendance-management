@@ -1,6 +1,6 @@
 package com.computer_rescuer.attendance_management.adapter.out.hrmos.mapper;
 
-import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+import static com.computer_rescuer.attendance_management.shared.DateTimeSupports.JST;
 
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.model.HrmosSegment;
 import com.computer_rescuer.attendance_management.domain.model.Segment;

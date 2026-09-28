@@ -1,6 +1,6 @@
 package com.computer_rescuer.attendance_management.infrastructure.config;
 
-import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+import static com.computer_rescuer.attendance_management.shared.DateTimeSupports.JST;
 
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;
