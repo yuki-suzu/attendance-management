@@ -1,6 +1,7 @@
 package com.computer_rescuer.attendance_management.adapter.in.scheduler;
 
 import com.computer_rescuer.attendance_management.application.port.in.NotifyUnstampedAlertUseCase;
+import java.time.Clock;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 public class UnstampedAlertScheduler {
 
   private final NotifyUnstampedAlertUseCase useCase;
+  private final Clock clock;
 
   /**
    * スケジュール１
@@ -45,7 +47,7 @@ public class UnstampedAlertScheduler {
    * バッチ処理実行
    */
   public void executeDailyAlert() {
-    LocalDate today = LocalDate.now();
+    LocalDate today = LocalDate.now(clock);
     log.info("【定期実行】{} の未打刻アラートバッチを自動起動します。", today);
     useCase.execute(today);
   }

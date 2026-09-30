@@ -1,6 +1,6 @@
 package com.computer_rescuer.attendance_management.application.interactor;
 
-import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+import static com.computer_rescuer.attendance_management.shared.DateTimeSupports.JST;
 
 import com.computer_rescuer.attendance_management.application.port.in.GetDailyAttendanceUseCase;
 import com.computer_rescuer.attendance_management.application.port.out.FetchDailyWorkRecordPort;
@@ -49,7 +49,7 @@ public class GetDailyAttendanceInteractor implements GetDailyAttendanceUseCase {
     ZonedDateTime now = ZonedDateTime.now(JST);
 
     return records.stream()
-        // 💡 修正: APIの「申請ステータス」ではなく、マスタの「勤務区分ステータス」で休日を弾く
+        // APIの「申請ステータス」ではなく、マスタの「勤務区分ステータス」で休日を弾く
         .filter(r -> {
           Segment masterSegment = segmentMap.get(r.segmentTitle());
 

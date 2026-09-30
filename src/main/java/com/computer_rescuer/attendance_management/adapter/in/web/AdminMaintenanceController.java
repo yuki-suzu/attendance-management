@@ -3,6 +3,8 @@ package com.computer_rescuer.attendance_management.adapter.in.web;
 import com.computer_rescuer.attendance_management.adapter.in.model.ApiResponse;
 import com.computer_rescuer.attendance_management.application.port.out.CheckedEmployeeRepositoryPort;
 import com.computer_rescuer.attendance_management.application.port.out.MonthlyAttendanceSummaryRepositoryPort;
+import io.swagger.v3.oas.annotations.Operation;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -25,19 +27,25 @@ public class AdminMaintenanceController {
 
   private final CheckedEmployeeRepositoryPort checkedEmployeeRepositoryPort;
   private final MonthlyAttendanceSummaryRepositoryPort summaryRepositoryPort;
-  
+  private final Clock clock;
+
   /**
    * チェック済み従業員履歴（t_checked_employee）のパージ処理を手動で実行します。
    *
    * @param beforeDate パージ対象の基準日（省略時は「本日より1年前」の日付が適用されます）
    * @return パージ完了メッセージおよび削除件数
    */
+  @Operation(
+      summary = "チェック済み従業員履歴パージ",
+      description = "t_checked_employee テーブルから指定日以前の古い未打刻チェック履歴を物理削除します。基準日（beforeDate）を省略した場合は「本日より1年前」の日付が自動適用されます。"
+  )
   @PostMapping("/cleanup/checked-employees")
   public ResponseEntity<ApiResponse<String>> purgeExpiredCheckedEmployees(
       @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate beforeDate
   ) {
-    LocalDate thresholdDate = (beforeDate != null) ? beforeDate : LocalDate.now().minusYears(1);
+    LocalDate thresholdDate =
+        (beforeDate != null) ? beforeDate : LocalDate.now(clock).minusYears(1);
 
     log.info("【手動実行】{} 以前のチェック済み従業員履歴パージ API が呼び出されました。",
         thresholdDate);
@@ -52,6 +60,10 @@ public class AdminMaintenanceController {
     ));
   }
 
+  @Operation(
+      summary = "月次勤怠サマリデータパージ",
+      description = "t_monthly_attendance_summary テーブルから指定日以前の古い月次サマリレコードを物理削除します。基準日（beforeDate）を省略した場合は「本日より6ヶ月前」の日付が自動適用されます。"
+  )
   @PostMapping("/cleanup/monthly-summaries")
   public ResponseEntity<ApiResponse<String>> purgeExpiredMonthlySummaries(
       @RequestParam(required = false)
@@ -59,7 +71,7 @@ public class AdminMaintenanceController {
   ) {
     LocalDateTime threshold = (beforeDate != null)
         ? beforeDate.atStartOfDay()
-        : LocalDateTime.now().minusMonths(6);
+        : LocalDateTime.now(clock).minusMonths(6);
 
     int count = summaryRepositoryPort.deleteOlderThan(threshold);
     return ResponseEntity.ok(ApiResponse.success(

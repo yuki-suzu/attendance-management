@@ -1,6 +1,9 @@
 package com.computer_rescuer.attendance_management.adapter.in.web;
 
-import com.computer_rescuer.attendance_management.application.interactor.NotifyUnstampedAlertInteractor;
+import com.computer_rescuer.attendance_management.adapter.in.model.ApiResponse;
+import com.computer_rescuer.attendance_management.application.port.in.NotifyUnstampedAlertUseCase;
+import io.swagger.v3.oas.annotations.Operation;
+import java.time.Clock;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AttendanceAlertController {
 
-  private final NotifyUnstampedAlertInteractor notifyUnstampedAlertInteractor;
+  private final NotifyUnstampedAlertUseCase useCase;
+  private final Clock clock;
 
   /**
    * 未打刻者の抽出および LINE WORKS への管理者通知を手動で実行します。
@@ -31,18 +35,23 @@ public class AttendanceAlertController {
    * @param date 実行対象の日付（省略時はシステム日付の「本日」が適用されます）
    * @return 処理結果（200 OK）
    */
+  @Operation(
+      summary = "未打刻アラートバッチ手動実行",
+      description = "指定した対象日の未打刻者（出勤予定時刻を過ぎても打刻実績のない従業員）を抽出し、管理者向けサマリ通知および本人向けDMイベントを Kafka へ即時ディスパッチします。日付（date）を省略した場合は「本日」が適用されます。"
+  )
   @PostMapping("/unstamped")
-  public ResponseEntity<String> triggerUnstampedAlert(
+  public ResponseEntity<ApiResponse<String>> triggerUnstampedAlert(
       @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
   ) {
-    LocalDate targetDate = (date != null) ? date : LocalDate.now();
+    LocalDate targetDate = (date != null) ? date : LocalDate.now(clock);
 
     log.info("【手動実行】{} の未打刻アラート通知 API が呼び出されました。", targetDate);
 
     // ユースケース（Interactor）の呼び出し
-    notifyUnstampedAlertInteractor.execute(targetDate);
+    useCase.execute(targetDate);
 
-    return ResponseEntity.ok("アラート通知バッチの実行が完了しました。対象日: " + targetDate);
+    return ResponseEntity.ok(
+        ApiResponse.success("アラート通知バッチの実行が完了しました。対象日: " + targetDate));
   }
 }

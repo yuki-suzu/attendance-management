@@ -31,7 +31,7 @@ public class HrmosStampLogApi {
   public List<HrmosStampLog> fetchDailyStampLogs(String token, String date, int page) {
     String path = String.format("/stamp_logs/daily/%s", date);
     return coreClient.fetchAndParseList(
-        token, path, page, "stamp_logs", "日次打刻ログ", new TypeReference<>() {
+        token, path, page, "日次打刻ログ", new TypeReference<>() {
         }
     );
   }
@@ -64,8 +64,7 @@ public class HrmosStampLogApi {
     }
 
     return coreClient.fetchAndParseList(
-        token, purePath, page, queryParams, "stamp_logs", "ユーザー打刻ログ",
-        new TypeReference<>() {
+        token, purePath, page, queryParams, "ユーザー打刻ログ", new TypeReference<>() {
         }
     );
   }

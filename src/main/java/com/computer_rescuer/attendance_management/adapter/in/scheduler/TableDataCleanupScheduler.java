@@ -2,6 +2,7 @@ package com.computer_rescuer.attendance_management.adapter.in.scheduler;
 
 import com.computer_rescuer.attendance_management.application.port.out.CheckedEmployeeRepositoryPort;
 import com.computer_rescuer.attendance_management.application.port.out.MonthlyAttendanceSummaryRepositoryPort;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class TableDataCleanupScheduler {
 
   private final CheckedEmployeeRepositoryPort checkedEmployeeRepositoryPort;
   private final MonthlyAttendanceSummaryRepositoryPort summaryRepositoryPort;
+  private final Clock clock;
 
   /**
    * 過去データを削除するライフサイクル処理
@@ -37,7 +39,7 @@ public class TableDataCleanupScheduler {
       lockAtMostFor = "PT10M"
   )
   public void purgeExpiredRecords() {
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.now(clock);
     purgeExpiredCheckedEmployeeRecords(now);
     purgeExpiredMonthlyReportRecords(now);
   }
