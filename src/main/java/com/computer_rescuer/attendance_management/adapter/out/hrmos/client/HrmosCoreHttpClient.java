@@ -75,9 +75,9 @@ class HrmosCoreHttpClient {
    * ページング用の標準パラメータ（limit=100, page=N）のみでリクエストを行う場合に使用します。
    * </p>
    */
-  <T> List<T> fetchAndParseList(String token, String path, int page, String jsonKey,
-      String resourceName, TypeReference<List<T>> typeReference) {
-    return fetchAndParseList(token, path, page, Map.of(), jsonKey, resourceName, typeReference);
+  <T> List<T> fetchAndParseList(String token, String path, int page, String resourceName,
+      TypeReference<List<T>> typeReference) {
+    return fetchAndParseList(token, path, page, Map.of(), resourceName, typeReference);
   }
 
   /**
@@ -92,15 +92,14 @@ class HrmosCoreHttpClient {
    * @param path             呼び出し先のエンドポイントパス（例: "/stamp_logs/user/17"）※クエリを含めない純粋なパス
    * @param page             取得対象のページ番号（1から開始）
    * @param extraQueryParams パスに追加する任意のクエリパラメータ（例: from, to）
-   * @param jsonKey          JSONレスポンス内で目的の配列が格納されているキー名
    * @param resourceName     ログ出力に使用するリソースの論理名（例: "従業員"）
    * @param typeReference    Jacksonでのデシリアライズに必要な型参照オブジェクト
    * @param <T>              返却されるリストの要素型
    * @return デシリアライズ済みのモデルリスト
    */
   <T> List<T> fetchAndParseList(String token, String path, int page,
-      Map<String, String> extraQueryParams,
-      String jsonKey, String resourceName, TypeReference<List<T>> typeReference) {
+      Map<String, String> extraQueryParams, String resourceName,
+      TypeReference<List<T>> typeReference) {
 
     log.info("HRMOSから {} 一覧を取得します（page: {}）", resourceName, page);
 
@@ -133,8 +132,6 @@ class HrmosCoreHttpClient {
     }
 
     try {
-//      JsonNode root = jsonMapper.readTree(rawJson);
-//      JsonNode dataNode = (jsonKey != null && root.has(jsonKey)) ? root.get(jsonKey) : root;
       return jsonMapper.readValue(rawJson, typeReference);
     } catch (Exception e) {
       log.error("{} のJSON解析に失敗しました。Raw JSON: {}", resourceName, rawJson, e);

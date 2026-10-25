@@ -20,6 +20,7 @@ public class SegmentPersistenceAdapter implements FetchSegmentPort {
   @Override
   public List<Segment> fetchAll() {
     return dsl.selectFrom(M_SEGMENT)
+        .orderBy(M_SEGMENT.ID.asc())
         .fetch()
         .map(mapper::toDomain);
   }

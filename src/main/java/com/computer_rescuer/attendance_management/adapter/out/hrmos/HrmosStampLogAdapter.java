@@ -1,9 +1,9 @@
 package com.computer_rescuer.attendance_management.adapter.out.hrmos;
 
 import static com.computer_rescuer.attendance_management.adapter.out.hrmos.support.HrmosPaginationHelper.fetchAllPages;
-import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.ISO_LOCAL_DATE;
-import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.ISO_OFFSET_DATE_TIME;
-import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+import static com.computer_rescuer.attendance_management.shared.DateTimeSupports.ISO_LOCAL_DATE;
+import static com.computer_rescuer.attendance_management.shared.DateTimeSupports.localDateToIsoDateTimeString;
+import static com.computer_rescuer.attendance_management.shared.DateTimeSupports.toEndOfDay;
 
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.client.HrmosAuthApi;
 import com.computer_rescuer.attendance_management.adapter.out.hrmos.client.HrmosStampLogApi;
@@ -15,7 +15,6 @@ import com.computer_rescuer.attendance_management.application.port.out.ResolveHr
 import com.computer_rescuer.attendance_management.domain.model.Employee;
 import com.computer_rescuer.attendance_management.domain.model.StampLog;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -49,23 +48,9 @@ public class HrmosStampLogAdapter implements FetchStampLogPort {
 
     String token = authApi.fetchToken();
     String dateStr = date.format(ISO_LOCAL_DATE);
-    List<HrmosStampLog> allRawData = new ArrayList<>();
 
-    int page = 1;
-    while (true) {
-      List<HrmosStampLog> paged = stampLogApi.fetchDailyStampLogs(token, dateStr, page);
-      if (paged == null || paged.isEmpty()) {
-        break;
-      }
-
-      allRawData.addAll(paged);
-      log.debug("🔍 HRMOSから日次打刻ログを {} 件取得しました (page: {})", paged.size(), page);
-
-      if (paged.size() < 100) {
-        break;
-      }
-      page++;
-    }
+    List<HrmosStampLog> allRawData = fetchAllPages("日次打刻ログ",
+        page -> stampLogApi.fetchDailyStampLogs(token, dateStr, page));
 
     // 取得した生データをローカルDBの社員情報でエンリッチして返す
     return enrichWithEmployeeDataAndMap(allRawData);
@@ -93,10 +78,10 @@ public class HrmosStampLogAdapter implements FetchStampLogPort {
   private List<StampLog> fetchLogsFromApi(Integer userId, LocalDate fromDate, LocalDate toDate) {
     String token = authApi.fetchToken();
     String fromApiString = (fromDate != null)
-        ? fromDate.atStartOfDay(JST).format(ISO_OFFSET_DATE_TIME)
+        ? localDateToIsoDateTimeString(fromDate)
         : null;
     String toApiString = (toDate != null)
-        ? toDate.plusDays(1).atStartOfDay(JST).format(ISO_OFFSET_DATE_TIME)
+        ? localDateToIsoDateTimeString(toEndOfDay(toDate))
         : null;
 
     List<HrmosStampLog> allRawData = fetchAllPages("打刻ログ", page ->

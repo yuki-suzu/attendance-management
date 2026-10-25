@@ -63,7 +63,7 @@ public class AttendanceIrregularityEventBuilder {
             } else if (segId == SEG_UNSCHEDULED_HOLIDAY) {
               unscheduled += count;
             } else if (segId == SEG_AM_HALF_HOLIDAY || segId == SEG_PM_HALF_HOLIDAY) {
-              half += count; // 💡 今前半休と今後半休を合算！
+              half += count; // 午前半休と午後半休を合算！
             } else if (segId == SEG_DELAY) {
               delay += count;
             }

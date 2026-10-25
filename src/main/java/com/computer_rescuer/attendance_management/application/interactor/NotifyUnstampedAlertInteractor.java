@@ -17,13 +17,16 @@ import com.computer_rescuer.attendance_management.domain.model.DailyAttendance.S
 import com.computer_rescuer.attendance_management.domain.model.DailyWorkRecord;
 import com.computer_rescuer.attendance_management.domain.model.Employee;
 import com.computer_rescuer.attendance_management.domain.model.Segment;
-import com.computer_rescuer.attendance_management.infrastructure.property.KafkaProperties;
+import com.computer_rescuer.attendance_management.domain.service.DailyAttendanceFactory;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,10 +34,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 未打刻アラート通知ユースケースの実装クラス。
+ * 未打刻アラート通知ユースケースの実装クラス（Interactor）。
  * <p>
- * HRMOS 実績、打刻ログ、ローカルマスタを突き合わせて未打刻者を特定し、 チェック済み履歴（{@code t_checked_employee}）の参照および更新を行いつつ、
- * 出力ポート（{@link NotifyUnstampedAlertPort}）を通じて Kafka へイベントを発行します。
+ * HRMOS の日次勤怠実績、打刻ログ、ローカルマスタを突き合わせて未打刻者を特定し、 チェック済み履歴（{@code t_checked_employee}）の参照・更新を行いつつ、
+ * 出力ポート（{@link NotifyUnstampedAlertPort}）を通じて非同期イベントを発行します。<br> 日時取得には {@link Clock}
+ * を使用し、判定オブジェクトの組み立ては {@link DailyAttendanceFactory} へ委譲することで、
+ * ユースケースオーケストレーションへの関心分離と高いテスト容易性を両立しています。
  * </p>
  */
 @Slf4j
@@ -51,7 +56,8 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
   private final NotifyUnstampedAlertPort notifyUnstampedAlertPort;
   private final UnstampedAlertEventBuilder eventBuilder;
   private final HrmosStampLogMapper stampMapper;
-  private final KafkaProperties kafkaProperties;
+  private final DailyAttendanceFactory dailyAttendanceFactory;
+  private final Clock clock;
 
   /**
    * {@inheritDoc}
@@ -59,7 +65,7 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
   @Override
   @Transactional(rollbackFor = Exception.class)
   public void execute(LocalDate date) {
-    ZonedDateTime now = ZonedDateTime.now();
+    ZonedDateTime now = ZonedDateTime.now(clock);
 
     // 1. 未打刻者の検知・特定
     List<DailyAttendance> alerts = detectUnstampedAttendances(date, now);
@@ -83,18 +89,17 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
         date, now.toLocalDateTime(), alerts, employeeMap, alreadyCheckedTodayIds, monthlyCounts);
     notifyUnstampedAlertPort.sendManagerAlert(alertEvent);
 
-    // 3. 本人向けDMイベントの送信（環境変数フラグおよび本日初回検知者のみ）
-    if (kafkaProperties.directReminderEnabled()) {
-      UnstampedDirectReminderEvent directEvent = eventBuilder.buildDirectReminderEvent(
-          alerts, employeeMap, alreadyCheckedTodayIds);
+    // 3. 本人向けDMイベント（または管理者代理通知イベント）の送信
+    UnstampedDirectReminderEvent directEvent = eventBuilder.buildDirectReminderEvent(
+        alerts,
+        employeeMap,
+        alreadyCheckedTodayIds
+    );
 
-      if (!directEvent.employees().isEmpty()) {
-        notifyUnstampedAlertPort.sendDirectReminder(directEvent);
-      } else {
-        log.info("ℹ️ 本日分の未打刻DMは全員送信済みのため、スキップしました。");
-      }
+    if (!directEvent.employees().isEmpty()) {
+      notifyUnstampedAlertPort.sendDirectReminder(directEvent);
     } else {
-      log.info("ℹ️ 本人向けDM機能は無効化されています (app.kafka.direct-reminder-enabled = false)");
+      log.info("ℹ️ 本日分の未打刻DMは全員送信済みのため、スキップしました。");
     }
 
     // 4. チェック済み履歴テーブルへの保存（多重実行時の二重登録は自動無視）
@@ -107,6 +112,10 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
 
   /**
    * 各種データソースを集約・突合し、未打刻対象者のリストを抽出します。
+   *
+   * @param date 勤怠判定対象日
+   * @param now  判定基準日時
+   * @return 未打刻と判定された勤怠結果リスト
    */
   private List<DailyAttendance> detectUnstampedAttendances(LocalDate date, ZonedDateTime now) {
     var records = fetchDailyWorkRecordPort.fetchByDate(date);
@@ -118,18 +127,24 @@ public class NotifyUnstampedAlertInteractor implements NotifyUnstampedAlertUseCa
         userIds);
     Map<Integer, LocalTime> clockInMap = stampMapper.toClockInMap(stampLogs);
 
+    // ID昇順で決定論的にソートし、重複時は先勝ち＋エラーログ出力
     Map<String, Segment> segmentMap = domainSegments.stream()
-        .collect(Collectors.toMap(Segment::title, s -> s, (existing, replacement) -> existing));
+        .sorted(Comparator.comparing(Segment::id))
+        .collect(Collectors.toMap(
+            Segment::title,
+            Function.identity(),
+            (existing, replacement) -> {
+              log.error(
+                  "🚨 【マスタ重複警告】勤務区分名 '{}' が重複しています！ (採用ID: {}, 無視ID: {})",
+                  existing.title(), existing.id(), replacement.id());
+              return existing;
+            }
+        ));
 
     return records.stream()
         .filter(r -> !"0000000000".equals(r.employeeNumber()))
-        .map(r -> r.withStampingTime(clockInMap.get(r.userId())))
-        .map(r -> r.withDepartmentName(departmentMap.getOrDefault(r.userId(), "未所属")))
-        .map(r -> {
-          Segment segment = segmentMap.get(r.segmentTitle());
-          LocalTime scheduledTime = (segment != null) ? segment.startAt() : null;
-          return DailyAttendance.create(r, scheduledTime, date, now);
-        })
+        .map(
+            r -> dailyAttendanceFactory.create(r, segmentMap, departmentMap, clockInMap, date, now))
         .filter(attendance -> attendance.status() == Status.LATE_OR_FORGOT)
         .toList();
   }

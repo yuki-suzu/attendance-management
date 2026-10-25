@@ -1,6 +1,6 @@
 package com.computer_rescuer.attendance_management.domain.model;
 
-import static com.computer_rescuer.attendance_management.shared.DateTimeConstants.JST;
+import static com.computer_rescuer.attendance_management.shared.DateTimeSupports.JST;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

@@ -1,6 +1,8 @@
 package com.computer_rescuer.attendance_management.adapter.in.web;
 
+import com.computer_rescuer.attendance_management.adapter.in.model.ApiResponse;
 import com.computer_rescuer.attendance_management.application.port.in.SyncMasterDataUseCase;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -31,12 +33,16 @@ public class MasterDataSyncController {
    *
    * @return 処理結果（成功時は HTTP 200 OK）
    */
+  @Operation(
+      summary = "共通マスタデータ手動同期",
+      description = "外部システム（HRMOS）から最新の部門マスタ（m_department）および勤務区分マスタ（m_segment）を取得し、ローカルデータベースへ全件洗い替え同期します。単一トランザクションで実行され、異常時はロールバックされます。"
+  )
   @PostMapping
-  public ResponseEntity<Void> syncMasterData() {
+  public ResponseEntity<ApiResponse<Void>> syncMasterData() {
     log.info("API要求受信: 各種マスタデータの同期処理をキックします。");
 
     syncMasterDataUseCase.syncMasterData();
 
-    return ResponseEntity.ok().build();
+    return ResponseEntity.ok(ApiResponse.success());
   }
 }

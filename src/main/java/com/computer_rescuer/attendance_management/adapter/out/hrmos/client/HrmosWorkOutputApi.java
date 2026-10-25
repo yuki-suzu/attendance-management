@@ -22,7 +22,7 @@ public class HrmosWorkOutputApi {
   public List<HrmosDailyWorkOutput> fetchDailyWorkOutputs(String token, String date, int page) {
     String path = String.format("/work_outputs/daily/%s", date);
     return coreClient.fetchAndParseList(
-        token, path, page, "work_outputs", "日次勤怠", new TypeReference<>() {
+        token, path, page, "日次勤怠", new TypeReference<>() {
         }
     );
   }
@@ -44,7 +44,7 @@ public class HrmosWorkOutputApi {
     Map<String, String> queryParams = Map.of("user_id", String.valueOf(userId));
 
     return coreClient.fetchAndParseList(
-        token, path, 1, queryParams, "work_outputs", "月次勤怠", new TypeReference<>() {
+        token, path, 1, queryParams, "月次勤怠", new TypeReference<>() {
         }
     );
   }

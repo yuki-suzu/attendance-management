@@ -1,6 +1,7 @@
 package com.computer_rescuer.attendance_management.adapter.in.scheduler;
 
 import com.computer_rescuer.attendance_management.application.port.in.MonthlyAttendanceSummaryUseCase;
+import java.time.Clock;
 import java.time.YearMonth;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 public class MonthlyAttendanceSummaryScheduler {
 
   private final MonthlyAttendanceSummaryUseCase useCase;
+  private final Clock clock;
 
   /**
    * 当月分の月次サマリを自動集計・通知します。
@@ -28,7 +30,7 @@ public class MonthlyAttendanceSummaryScheduler {
       lockAtMostFor = "PT10M"
   )
   public void executeDailySummary() {
-    YearMonth currentMonth = YearMonth.now();
+    YearMonth currentMonth = YearMonth.now(clock);
     log.info("【定期実行】{} の月次勤怠サマリ自動集計を開始します。", currentMonth);
     useCase.execute(currentMonth);
   }
